@@ -1,0 +1,312 @@
+<?php
+
+define('RATE_PATH_ADMIN_PAGE', 'admin/build/rate');
+define('RATE_PATH_ADMIN_PAGE_LIST', 'admin/build/rate/list');
+define('RATE_PATH_ADMIN_PAGE_ADD', 'admin/build/rate/add');
+define('RATE_PATH_ADMIN_PAGE_EDIT', 'admin/build/rate/%/edit');
+define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/build/rate/%/delete');
+define('RATE_PATH_ADMIN_AHAH', 'rate/options/js');
+define('RATE_PATH_AHAH', 'rate/vote/js');
+
+define('RATE_VAR_WIDGETS', 'rate_widgets');
+
+/**
+ * Implements hook_perm().
+ */
+function rate_perm() {
+  return array('administer rate');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function rate_menu() {
+	$menu = array();
+
+  $menu[RATE_PATH_ADMIN_PAGE] = array(
+    'title' => t('Rate widgets'),
+    'description' => t('Manage rating widgets.'),
+    'page callback' => 'rate_admin_page',
+    'access arguments' => array('administer rate'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'rate.admin.inc',
+  );
+
+  $menu[RATE_PATH_ADMIN_PAGE_LIST] = array(
+    'title' => t('List'),
+    'page callback' => 'rate_admin_page',
+    'access arguments' => array('administer rate'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'rate.admin.inc',
+    'weight' => 0,
+  );
+
+  $menu[RATE_PATH_ADMIN_PAGE_ADD] = array(
+    'title' => t('Add widget'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rate_widget_form'),
+    'access arguments' => array('administer rate'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'rate.admin.inc',
+    'weight' => 1,
+  );
+
+  $menu[RATE_PATH_ADMIN_PAGE_EDIT] = array(
+    'title' => t('Edit widget'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rate_widget_form', 3),
+    'access arguments' => array('administer rate'),
+    'type' => MENU_CALLBACK,
+    'file' => 'rate.admin.inc',
+  );
+
+  $menu[RATE_PATH_ADMIN_PAGE_DELETE] = array(
+    'title' => t('Delete widget'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rate_widget_delete_form', 3),
+    'access arguments' => array('administer rate'),
+    'type' => MENU_CALLBACK,
+    'file' => 'rate.admin.inc',
+  );
+
+	$menu[RATE_PATH_ADMIN_AHAH] = array(
+		'page callback' => 'rate_widget_form_ahah',
+		'access arguments' => array('administer rate'),
+		'type' => MENU_CALLBACK,
+    'file' => 'rate.admin.inc',
+	);
+
+	$menu[RATE_PATH_AHAH] = array(
+		'page callback' => 'rate_vote_form_ahah',
+		'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK
+	);
+
+	return $menu;
+}
+
+function rate_get_active_widgets($content_type, $type) {
+  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  $active = array();
+  foreach ($widgets as $widget_id => $widget) {
+    if ($content_type == 'node' && in_array($type, $widget->node_types)) {
+      $active[$widget_id] = $widget;
+    }
+    if ($content_type == 'comment' && in_array($type, $widget->comment_types)) {
+      $active[$widget_id] = $widget;
+    }
+  }
+  return $active;
+}
+
+function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = FALSE) {
+  $output = array();
+  
+  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  $output['#content'] = drupal_get_form('rate_vote_form_' . $widget_id, $content_type, $content_id);
+
+  return $output;
+}
+
+function rate_get_results($content_type, $content_id, $widget_id) {
+  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  $widget = $widgets[$widget_id];
+  $results = votingapi_select_results(array(
+    'content_type' => $content_type,
+    'content_id' => $content_id,
+    'tag' => $widget->tag,
+  ));
+  $output = array('count' => 0);
+  if ($widget->value_type == 'option') {
+    $output['options'] = array();
+    foreach ($widget->options as $option) {
+      $output['options'][$option[0]] = 0;
+    }
+  }
+  foreach ($results as $result) {
+    if ($widget->value_type == 'percent' && $result['function'] == 'average') {
+      $output['rating'] = $result['value'];
+    }
+    elseif ($widget->value_type == 'points' && $result['function'] == 'sum') {
+      $output['rating'] = $result['value'];
+    }
+    elseif ($result['function'] == 'count') {
+      $output['count'] = $result['value'];
+    }
+    elseif (preg_match('/^option\\-([0-9]+)$/', $result['function'], $match)) {
+      $output['options'][$match[1]] = $result['value'];
+      $output['count'] += $result['value'];
+    }
+  }
+
+  // Check if this is a thumbs up / down voting, if so, calculate thumbs up / down percentages
+  if ($widget->value_type == 'points' && count($widget->options) == 2) {
+    // Votes down have a -1 value, votes up +1, $output['rating'] are the summed votes
+    $output['down'] = (int) ($output['count'] - $output['rating']) / 2;
+    $output['up'] = $output['count'] - $output['down'];
+    if ($output['count'] == 0) {
+      // If no one voted its 50-50
+      $output['up_percent'] = 50;
+    } else {
+      $output['up_percent'] = (int) (($output['up'] * 100) / $output['count']);
+    }
+    $output['down_percent'] = 100 - $output['up_percent'];
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_forms().
+ */
+function rate_forms($form_id, $args) {
+  $forms = array();
+  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  foreach ($widgets as $widget_id => $widget) {
+    $forms['rate_vote_form_' . $widget_id] = array(
+      'callback' => 'rate_vote_form',
+      'callback arguments' => array($widget_id, $widget),
+    );
+  }
+  return $forms;
+}
+
+function rate_vote_form(&$form_state, $widget_id, $widget, $content_type, $content_id) {
+  $form = array();
+  $form['#widget_id'] = $widget_id;
+  $form['#widget'] = $widget;
+  $form['#content_type'] = $content_type;
+  $form['#content_id'] = $content_id;
+
+  $div_id = "rate-$content_type-$content_id-$widget_id";
+  $form['container'] = array(
+    '#prefix' => "<div id=\"$div_id\">",
+    '#suffix' => '</div>',
+  );
+  $theme_name = str_replace('-', '_', $widget->name);
+  $form['container']['options'] = array(
+    '#theme' => array('rate_widget__' . $theme_name, 'rate_widget'),
+    '#voted' => FALSE, // Used in theme
+    '#results' => rate_get_results($content_type, $content_id, $widget_id),
+    '#option_id' => array(),
+  );
+  foreach ($widget->options as $option) {
+    // This name must be unique for all submit buttons across the page, AHAH will fail otherwise.
+    $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
+    $form['container']['options'][$id] = array(
+      '#type' => 'submit',
+      '#value' => $option[1],
+      '#ahah' => array(
+        'path' => RATE_PATH_AHAH,
+        'wrapper' => $div_id,
+        'method' => 'replace',
+        'effect' => 'none',
+      ),
+    );
+    // Add the ID to the #option_id array, used in theme
+    $form['container']['options']['#option_id'][$option[0]] = $id;
+    // Add the vote count for this specific option to #votes
+    if (isset($form['container']['options']['#results']['options'])) {
+      $form['container']['options'][$id]['#votes'] = $form['container']['options']['#results']['options'][$option[0]];
+    }
+  }
+  
+  $form['#submit'] = array('rate_vote_form_submit');
+  
+  return $form;
+}
+
+function rate_vote_form_ahah() {
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form['#post'] = $_POST;
+  $form['#redirect'] = FALSE;
+  $form['#programmed'] = FALSE;
+  $form_state['post'] = $_POST;
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  $container = $form['container'];
+  $container['options']['#voted'] = TRUE;
+  unset($container['#prefix'], $container['#suffix']); // Prevent duplicate wrappers.
+  $javascript = drupal_add_js(NULL, NULL, 'header');
+  drupal_json(array(
+    'status' => TRUE,
+    'data' => theme('status_messages') . drupal_render($container),
+    'settings' => call_user_func_array('array_merge_recursive', $javascript['setting']),
+  ));
+}
+
+function rate_vote_form_submit(&$form, &$form_state) {
+  $widget = $form['#widget'];
+  $button_label = $form_state['clicked_button']['#post']['op'];
+  foreach ($widget->options as $option) {
+    if ($button_label == $option[1]) {
+      $value = $option[0];
+    }
+  }
+  if (!isset($value)) {
+    return;
+  }
+
+  $votes = array(
+    'content_type' => $form['#content_type'],
+    'content_id' => $form['#content_id'],
+    'value_type' => $widget->value_type,
+    'value' => $value,
+    'tag' => $widget->tag,
+  );
+
+  votingapi_set_votes($votes);
+}
+
+/**
+ * Implements hook_nodeapi().
+ */
+function rate_nodeapi(&$node, $op, $a3, $a4) {
+	// Adding the form to the node view
+	if ($op == 'view') {
+    $widgets = rate_get_active_widgets('node', $node->type);
+    foreach ($widgets as $widget_id => $widget) {
+      $widget_name = 'rate_' . $widget->name;
+      $node->content[$widget_name] = rate_generate_widget($widget_id, 'node', $node->nid, (bool) $node->teaser);
+    }
+	}
+}
+
+/**
+ * Implements hook_comment().
+ */
+function rate_comment(&$a1, $op) {
+	// Adding the form to the node view
+	if ($op == 'view') {
+    $widgets = rate_get_active_widgets('node', $node->type);
+    foreach ($widgets as $widget_id => $widget) {
+      $widget_name = 'rate_' . $widget->name;
+      $a1->$widget_name = rate_generate_widget($widget_id, 'comment', $a1->cid);
+    }
+	}
+}
+
+/**
+ * Implements hook_theme().
+ */
+function rate_theme() {
+  return array(
+    'rate_widget' => array(
+      'pattern' => 'rate_widget__',
+      'arguments' => array('form' => NULL),
+      'template' => 'rate-widget'
+    ),
+    'rate_admin_types' => array(
+      'arguments' => array('element' => NULL),
+      'file' => 'rate.admin.inc',
+    ),
+    'rate_admin_options' => array(
+      'arguments' => array('element' => NULL),
+      'file' => 'rate.admin.inc',
+    ),
+  );
+}
