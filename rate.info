@@ -1,4 +1,5 @@
 name = Rate
 description = Flexible voting options for nodes and comments
 core = 6.x
+package = Voting
 dependencies[] = votingapi
