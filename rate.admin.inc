@@ -1,5 +1,16 @@
 <?php
+// $Id$
 
+/**
+ * @file
+ * Rating admin
+ */
+
+/**
+ * Menu callback.
+ *
+ * Generates the admin page which contains the widget listing.
+ */
 function rate_admin_page() {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   uasort($widgets, '_rate_sort');
@@ -19,6 +30,12 @@ function rate_admin_page() {
   return theme('table', $header, $rows);
 }
 
+/**
+ * Callback for uasort().
+ *
+ * @see rate_admin_page()
+ * @see http://php.net/uasort
+ */
 function _rate_sort($a, $b) {
   if ($a->title == $b->title) {
     return 0;
@@ -26,6 +43,9 @@ function _rate_sort($a, $b) {
   return $a->title < $b->title ? -1 : 1;
 }
 
+/**
+ * Form for adding and editing widgets.
+ */
 function rate_widget_form(&$form_state, $id = NULL) {
   $form = array();
 
@@ -203,6 +223,9 @@ function rate_widget_form(&$form_state, $id = NULL) {
   return $form;
 }
 
+/**
+ * Form validate.
+ */
 function rate_widget_form_validate($form, &$form_state) {
   // Validate machine readable name
   if (!preg_match('/^[a-z\\_0-9]+$/i', $form_state['values']['name'])) {
@@ -241,6 +264,9 @@ function rate_widget_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Form submit handler.
+ */
 function rate_widget_form_submit($form, &$form_state) {
   if ($form_state['clicked_button']['#id'] == 'edit-add-another') {
     $form_state['rebuild'] = TRUE;
@@ -288,6 +314,9 @@ function rate_widget_form_submit($form, &$form_state) {
   $form_state['redirect'] = RATE_PATH_ADMIN_PAGE;
 }
 
+/**
+ * AHAH callback for widget form.
+ */
 function rate_widget_form_ahah() {
   $form_state = array('storage' => NULL, 'submitted' => FALSE);
   $form_build_id = $_POST['form_build_id'];
@@ -310,6 +339,11 @@ function rate_widget_form_ahah() {
   ));
 }
 
+/**
+ * Theming function for the node / comment types list in the widget form.
+ *
+ * @ingroup themeable
+ */
 function theme_rate_admin_types($element) {
   $header = array(
     t('Name'),
@@ -331,6 +365,11 @@ function theme_rate_admin_types($element) {
   return theme('table', $header, $rows);
 }
 
+/**
+ * Theme the options list in the widget form.
+ *
+ * @ingroup themeable
+ */
 function theme_rate_admin_options($element) {
   $header = array(
     t('Value'),
@@ -354,6 +393,9 @@ function theme_rate_admin_options($element) {
   return theme('table', $header, $rows);
 }
 
+/**
+ * Form for deleting widgets.
+ */
 function rate_widget_delete_form(&$form_state, $id) {
   $form = array();
 
@@ -382,6 +424,9 @@ function rate_widget_delete_form(&$form_state, $id) {
   return $form;
 }
 
+/**
+ * Submit handler.
+ */
 function rate_widget_delete_form_submit($form, &$form_state) {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   if ($title = $widgets[$form['#widget_id']]->title) {

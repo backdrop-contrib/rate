@@ -1,5 +1,12 @@
 <?php
+// $Id$
 
+/**
+ * @file
+ * Rate module
+ */
+
+// Define constants for paths.
 define('RATE_PATH_ADMIN_PAGE', 'admin/build/rate');
 define('RATE_PATH_ADMIN_PAGE_LIST', 'admin/build/rate/list');
 define('RATE_PATH_ADMIN_PAGE_ADD', 'admin/build/rate/add');
@@ -8,6 +15,7 @@ define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/build/rate/%/delete');
 define('RATE_PATH_ADMIN_AHAH', 'rate/options/js');
 define('RATE_PATH_AHAH', 'rate/vote/js');
 
+// Define constants for variable names.
 define('RATE_VAR_WIDGETS', 'rate_widgets');
 
 /**
@@ -85,6 +93,13 @@ function rate_menu() {
 	return $menu;
 }
 
+/**
+ * Get list of active widgets.
+ *
+ * @param string $content_type Node type
+ * @param string $type "node" or "comment"
+ * @return array
+ */
 function rate_get_active_widgets($content_type, $type) {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $active = array();
@@ -99,6 +114,15 @@ function rate_get_active_widgets($content_type, $type) {
   return $active;
 }
 
+/**
+ * Generate a widget.
+ * 
+ * @param int $widget_id Widget id
+ * @param string $content_type "node" or "comment"
+ * @param int $content_id Node id (nid) or comment id (cid)
+ * @param bool $teaser
+ * @return array
+ */
 function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = FALSE) {
   $output = array();
   
@@ -108,6 +132,14 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
   return $output;
 }
 
+/**
+ * Get results for a voting widget.
+ *
+ * @param string $content_type "node" or "comment"
+ * @param int $content_id Node id (nid) or comment id (cid)
+ * @param int $widget_id Widget id
+ * @return array
+ */
 function rate_get_results($content_type, $content_id, $widget_id) {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
@@ -171,6 +203,9 @@ function rate_forms($form_id, $args) {
   return $forms;
 }
 
+/**
+ * Form for voting.
+ */
 function rate_vote_form(&$form_state, $widget_id, $widget, $content_type, $content_id) {
   $form = array();
   $form['#widget_id'] = $widget_id;
@@ -216,6 +251,9 @@ function rate_vote_form(&$form_state, $widget_id, $widget, $content_type, $conte
   return $form;
 }
 
+/**
+ * AHAH callback for voting form.
+ */
 function rate_vote_form_ahah() {
   $form_state = array('storage' => NULL, 'submitted' => FALSE);
   $form_build_id = $_POST['form_build_id'];
@@ -239,6 +277,9 @@ function rate_vote_form_ahah() {
   ));
 }
 
+/**
+ * Submit handler.
+ */
 function rate_vote_form_submit(&$form, &$form_state) {
   $widget = $form['#widget'];
   $button_label = $form_state['clicked_button']['#post']['op'];
