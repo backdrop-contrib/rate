@@ -283,7 +283,7 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->options = array();
 
   foreach ($form_state['values'] as $name => $value) {
-    if (preg_match('/^value([0-9]+)$/', $name, $match)) {
+    if (preg_match('/^value([0-9]+)$/', $name, $match) && !empty($value)) {
       $widget->options[] = array(
         $value,
         $form_state['values']['label' . $match[1]],
