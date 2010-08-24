@@ -79,7 +79,7 @@ function rate_choose_template_form(&$form_state, $id = NULL) {
   }
   $form['template'] = array(
     '#type' => 'select',
-    '#title' => t('Template'),
+    '#title' => t('Widget type'),
     '#options' => $options,
     '#default_value' => $selected,
   );
@@ -158,6 +158,10 @@ function rate_widget_form(&$form_state, $id = NULL) {
       return $form;
     }
     $widget->customizable = isset($template->customizable) ? $template->customizable : TRUE;
+    if ($widget->customizable && !$id) {
+      $widget->options = $template->options;
+      $widget->value_type = $template->value_type;
+    }
   }
   if (!isset($widget->customizable)) {
     $widget->customizable = TRUE;
@@ -170,18 +174,18 @@ function rate_widget_form(&$form_state, $id = NULL) {
   $form['#widget_customizable'] = $widget->customizable;
 
   if ($id) {
-    $link = l(t('switch the template'), str_replace('%', $id, RATE_PATH_ADMIN_PAGE_TEMPLATE));
+    $link = l(t('change the widget type'), str_replace('%', $id, RATE_PATH_ADMIN_PAGE_TEMPLATE));
     if ($widget->template == 'custom') {
-      $text = t('This is a custom widget. You may !switch', array('!switch' => $link));
+      $text = t('This is a custom widget. You may !change.', array('!change' => $link));
     }
     else {
       $template = _rate_get_template($widget->template);
-      $text = t('This widget is build using the %template template. You may !switch', array('%template' => $template->template_title, '!switch' => $link));
+      $text = t('This is a %type widget. You may !change.', array('%type' => $template->template_title, '!change' => $link));
     }
     $text = filter_xss($text);
     $form['template'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Template'),
+      '#title' => t('Widget type'),
     );
     $form['template']['switch'] = array(
       '#value' => $text,
