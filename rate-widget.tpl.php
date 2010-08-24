@@ -9,20 +9,12 @@
  * file for information on theming widgets.
  */
 
-foreach ($form as $name => $element) {
-  if ($name{0} == '#') {
-    continue; // Skip elements with a name starting with #
-  }
-  print drupal_render($element);
-  if (isset($element['#votes'])) {
-    print $element['#votes'];
-  }
-}
+//foreach ($links as $link) {
+//  print $link['content'] . $link['votes'];
+//}
 
-if (isset($form['#results']['rating'])) {
-  print t('Rating') . ': ' . $form['#results']['rating'] . ' ';
-}
+print $links[0]['content'];
 
-print t('Vote count') . ': ' . $form['#results']['count'];
+print $results['count'];
 
 ?>

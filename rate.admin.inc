@@ -27,7 +27,18 @@ function rate_admin_page() {
     );
   }
 
-  return theme('table', $header, $rows);
+  $output = '';
+  $output .= '<h3>' . t('Add widget') . '</h3>';
+  $output .= drupal_get_form('rate_choose_template_form');
+  if ($rows) {
+    $output .= theme('table', $header, $rows);
+  }
+  else {
+    $text = t('You do not have any rate widgets defined yet.');
+    $output .= '<p>' . check_plain($text) . '</p>';
+  }
+
+  return $output;
 }
 
 /**
@@ -44,14 +55,66 @@ function _rate_sort($a, $b) {
 }
 
 /**
- * Form for adding and editing widgets.
+ * Form for choosing a template before the user goes to the add widget form.
  */
-function rate_widget_form(&$form_state, $id = NULL) {
+function rate_choose_template_form(&$form_state, $id = NULL) {
   $form = array();
 
   if ($id) {
     $form['#widget_id'] = $id;
+    $widgets = variable_get(RATE_VAR_WIDGETS, array());
+    $widget = $widgets[$id];
+    isset($widget->template) or $widget->template = 'custom';
+    $selected = $widget->template;
   }
+  else {
+    $selected = 'custom';
+  }
+
+  $options = array('custom' => t('Custom'));
+  foreach (module_implements('rate_templates') as $module) {
+    foreach (module_invoke($module, 'rate_templates') as $name => $widget) {
+      $options[$name] = $widget->template_title;
+    }
+  }
+  $form['template'] = array(
+    '#type' => 'select',
+    '#title' => t('Template'),
+    '#options' => $options,
+    '#default_value' => $selected,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Next'),
+  );
+
+  return $form;
+}
+
+/**
+ * Form submit callback for the choose_template_form.
+ */
+function rate_choose_template_form_submit($form, &$form_state) {
+  $template = $form_state['values']['template'];
+  $query = 'template=' . urlencode($template);
+  if (isset($form['#widget_id'])) {
+    /**
+     * @todo: Copy over the options array from the template to the widget.
+     */
+    $path = str_replace('%', $form['#widget_id'], RATE_PATH_ADMIN_PAGE_EDIT);
+  }
+  else {
+    $path = RATE_PATH_ADMIN_PAGE_ADD;
+  }
+  drupal_goto($path, $query);
+}
+
+/**
+ * Form for adding and editing widgets.
+ */
+function rate_widget_form(&$form_state, $id = NULL) {
+  $form = array();
 
   if ($id) {
     $widgets = variable_get(RATE_VAR_WIDGETS, array());
@@ -69,6 +132,60 @@ function rate_widget_form(&$form_state, $id = NULL) {
     $widget->comment_types = array();
     $widget->value_type = 'percent';
     $widget->options = array();
+    $widget->template = 'custom';
+    $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+    $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
+  }
+  
+  if (isset($_GET['template'])) {
+    // The template can be overridden (also used for changing templates).
+    $widget->template = $_GET['template'];
+  }
+  
+  // These options should always be available, but we have to check for legacy.
+  isset($widget->translate) or $widget->translate = TRUE;
+  isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+  isset($widget->comment_display) or $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
+
+  if (!isset($widget->template)) {
+    $widget->template = 'custom';
+  }
+  elseif ($widget->template != 'custom') {
+    if (!$template = _rate_get_template($widget->template)) {
+      $form['info'] = array(
+        '#value' => t('You cannot edit this widget because it was built using the template %template which does not exists anymore.'),
+      );
+      return $form;
+    }
+    $widget->customizable = isset($template->customizable) ? $template->customizable : TRUE;
+  }
+  if (!isset($widget->customizable)) {
+    $widget->customizable = TRUE;
+  }
+
+  if ($id) {
+    $form['#widget_id'] = $id;
+  }
+  $form['#widget_template'] = $widget->template;
+  $form['#widget_customizable'] = $widget->customizable;
+
+  if ($id) {
+    $link = l(t('switch the template'), str_replace('%', $id, RATE_PATH_ADMIN_PAGE_TEMPLATE));
+    if ($widget->template == 'custom') {
+      $text = t('This is a custom widget. You may !switch', array('!switch' => $link));
+    }
+    else {
+      $template = _rate_get_template($widget->template);
+      $text = t('This widget is build using the %template template. You may !switch', array('%template' => $template->template_title, '!switch' => $link));
+    }
+    $text = filter_xss($text);
+    $form['template'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Template'),
+    );
+    $form['template']['switch'] = array(
+      '#value' => $text,
+    );
   }
 
   $form['title'] = array(
@@ -96,97 +213,105 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#required' => TRUE,
   );
 
-  $options = array(
-    'percent' => t('Percentage'),
-    'points' => t('Points'),
-    'option' => t('Options'),
-  );
-  $form['value_type'] = array(
-    '#type' => 'radios',
-    '#title' => t('Value type'),
-    '#options' => $options,
-    '#default_value' => $widget->value_type,
-    '#required' => TRUE,
-  );
-
-  $form['options'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Options'),
-    '#description' => t('Define the available voting buttons.'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-  );
-
-  $form['options']['options'] = array(
-    '#theme' => 'rate_admin_options',
-    '#prefix' => "<div id=\"rate-options\">",
-    '#suffix' => '</div>',
-  );
-
-  if ($form_state['submitted']) {
-    $option_count = (int) $form_state['values']['option_count'];
-    if ($form_state['clicked_button']['#id'] == 'edit-add-another') {
-      ++$option_count;
-    }
-  } else {
-    $option_count = max(2, count($widget->options));
-  }
-
-  $id = 0;
-  $c = $option_count;
-  for ($i = 0; $i < $c; $i++) {
-    if ($form_state['submitted'] && !empty($form_state['values']['delete' . $i])) {
-      --$option_count;
-      continue;
-    }
-    $form['options']['options']['option' . $id] = array();
-    if (isset($form_state['values']['value' . $i])) {
-      $default_value = $form_state['values']['value' . $i];
-      $default_label = $form_state['values']['label' . $i];
-    }
-    elseif (isset($widget->options[$i]) && !$form_state['submitted']) {
-      $default_value = $widget->options[$i][0];
-      $default_label = $widget->options[$i][1];
-    }
-    else {
-      $default_value = '';
-      $default_label = '';
-    }
-    $form['options']['options']['option' . $id]['value' . $id] = array(
-      '#type' => 'textfield',
-      '#title' => t('Value'),
-      '#default_value' => $default_value,
-      '#size' => 16,
+  if ($widget->customizable) {
+    $options = array(
+      'percent' => t('Percentage'),
+      'points' => t('Points'),
+      'option' => t('Options'),
     );
-    $form['options']['options']['option' . $id]['label' . $id] = array(
-      '#type' => 'textfield',
-      '#title' => t('Label'),
-      '#default_value' => $default_label,
-      '#size' => 40,
+    $form['value_type'] = array(
+      '#type' => 'radios',
+      '#title' => t('Value type'),
+      '#options' => $options,
+      '#default_value' => $widget->value_type,
+      '#required' => TRUE,
     );
-    $form['options']['options']['option' . $id]['delete' . $id] = array(
+
+    $form['options'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Options'),
+      '#description' => t('Define the available voting buttons.'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+    );
+
+    $form['options']['options'] = array(
+      '#theme' => 'rate_admin_options',
+      '#prefix' => "<div id=\"rate-options\">",
+      '#suffix' => '</div>',
+    );
+
+    if ($form_state['submitted']) {
+      $option_count = (int) $form_state['values']['option_count'];
+      if ($form_state['clicked_button']['#id'] == 'edit-add-another') {
+        ++$option_count;
+      }
+    } else {
+      $option_count = max(2, count($widget->options));
+    }
+
+    $id = 0;
+    $c = $option_count;
+    for ($i = 0; $i < $c; $i++) {
+      if ($form_state['submitted'] && !empty($form_state['values']['delete' . $i])) {
+        --$option_count;
+        continue;
+      }
+      $form['options']['options']['option' . $id] = array();
+      if (isset($form_state['values']['value' . $i])) {
+        $default_value = $form_state['values']['value' . $i];
+        $default_label = $form_state['values']['label' . $i];
+      }
+      elseif (isset($widget->options[$i]) && !$form_state['submitted']) {
+        $default_value = $widget->options[$i][0];
+        $default_label = $widget->options[$i][1];
+      }
+      else {
+        $default_value = '';
+        $default_label = '';
+      }
+      $form['options']['options']['option' . $id]['value' . $id] = array(
+        '#type' => 'textfield',
+        '#title' => t('Value'),
+        '#default_value' => $default_value,
+        '#size' => 16,
+      );
+      $form['options']['options']['option' . $id]['label' . $id] = array(
+        '#type' => 'textfield',
+        '#title' => t('Label'),
+        '#default_value' => $default_label,
+        '#size' => 40,
+      );
+      $form['options']['options']['option' . $id]['delete' . $id] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Delete'),
+        '#default_value' => FALSE,
+      );
+      ++$id;
+    }
+
+    $form['options']['option_count'] = array(
+      '#type' => 'hidden',
+      '#value' => $option_count,
+    );
+
+    $form['options']['add_another'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add another option'),
+      '#ahah' => array(
+        'path' => RATE_PATH_ADMIN_AHAH,
+        'wrapper' => 'rate-options',
+        'method' => 'replace',
+        'effect' => 'none',
+      ),
+    );
+
+    $form['translate'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Delete'),
-      '#default_value' => FALSE,
+      '#title' => t('Translate options'),
+      '#default_value' => $widget->translate,
     );
-    ++$id;
   }
-
-  $form['options']['option_count'] = array(
-    '#type' => 'hidden',
-    '#value' => $option_count,
-  );
-
-  $form['options']['add_another'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add another option'),
-    '#ahah' => array(
-      'path' => RATE_PATH_ADMIN_AHAH,
-      'wrapper' => 'rate-options',
-      'method' => 'replace',
-      'effect' => 'none',
-    ),
-  );
 
   $form['types'] = array(
     '#type' => 'fieldset',
@@ -215,6 +340,24 @@ function rate_widget_form(&$form_state, $id = NULL) {
     );
   }
 
+  $options = array(
+    RATE_DISPLAY_DISABLE => t('Do not add automatically'),
+    RATE_DISPLAY_ABOVE_CONTENT => t('Above the content'),
+    RATE_DISPLAY_BELOW_CONTENT => t('Below the content'),
+  );
+  $form['node_display'] = array(
+    '#type' => 'radios',
+    '#title' => t('Node display'),
+    '#options' => $options,
+    '#default_value' => $widget->node_display,
+  );
+  $form['comment_display'] = array(
+    '#type' => 'radios',
+    '#title' => t('Comment display'),
+    '#options' => $options,
+    '#default_value' => $widget->comment_display,
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -237,30 +380,32 @@ function rate_widget_form_validate($form, &$form_state) {
     form_set_error('tag', t('The vote tag may only contain alphanumeric characters and underscores.'));
   }
 
-  // Validate option values
-  $used_values = array();
-  foreach ($form_state['values'] as $name => $value) {
-    if (preg_match('/^value([0-9]+)$/', $name, $match)) {
-      if (empty($value)) {
-        continue;
-      }
-      if (!preg_match('/^\\-?[0-9]+$/', $value)) {
-        form_set_error($name, t('Values must be integers'));
-        continue;
-      }
-      if (in_array($value, $used_values)) {
-        form_set_error($name, t('You may not use the same value twice.'));
-      }
-      $used_values[] = $value;
-      if ($form_state['values']['value_type'] == 'percent') {
-        if ($value < 0 || $value > 100) {
-          form_set_error($name, t('Percentages must be between 0 and 100'));
+  if ($form['#widget_customizable']) {
+    // Validate option values
+    $used_values = array();
+    foreach ($form_state['values'] as $name => $value) {
+      if (preg_match('/^value([0-9]+)$/', $name, $match)) {
+        if (empty($value)) {
+          continue;
+        }
+        if (!preg_match('/^\\-?[0-9]+$/', $value)) {
+          form_set_error($name, t('Values must be integers'));
+          continue;
+        }
+        if (in_array($value, $used_values)) {
+          form_set_error($name, t('You may not use the same value twice.'));
+        }
+        $used_values[] = $value;
+        if ($form_state['values']['value_type'] == 'percent') {
+          if ($value < 0 || $value > 100) {
+            form_set_error($name, t('Percentages must be between 0 and 100'));
+          }
         }
       }
     }
-  }
-  if (!count($used_values)) {
-    form_set_error('', t('Each widget must have at least one options.'));
+    if (!count($used_values)) {
+      form_set_error('', t('Each widget must have at least one options.'));
+    }
   }
 }
 
@@ -279,8 +424,29 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->title = $form_state['values']['title'];
   $widget->node_types = array();
   $widget->comment_types = array();
-  $widget->value_type = $form_state['values']['value_type'];
   $widget->options = array();
+  $widget->template = $form['#widget_template'];
+  $widget->node_display = $form_state['values']['node_display'];
+  $widget->comment_display = $form_state['values']['comment_display'];
+  
+  if ($widget->template != 'custom') {
+    // Take over the values from the template.
+    $template = _rate_get_template($widget->template);
+    if (!$template->customizable) {
+      $widget->options = $template->options;
+    }
+    $widget->value_type = $template->value_type;
+    !isset($template->theme) or $widget->theme = $template->theme;
+    !isset($template->css) or $widget->css = $template->css;
+    $widget->translate = $template->translate;
+    if (isset($form_state['values']['translate'])) {
+      $widget->translate = (bool) $form_state['values']['translate'];
+    }
+  }
+  else {
+    $widget->value_type = $form_state['values']['value_type'];
+    $widget->translate = (bool) $form_state['values']['translate'];
+  }
 
   foreach ($form_state['values'] as $name => $value) {
     if (preg_match('/^value([0-9]+)$/', $name, $match) && !empty($value)) {
@@ -296,7 +462,7 @@ function rate_widget_form_submit($form, &$form_state) {
       $widget->comment_types[] = $match[1];
     }
   }
-
+  
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   if (!empty($form['#widget_id'])) {
     $id = (int) $form['#widget_id'];
