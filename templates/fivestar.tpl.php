@@ -8,12 +8,17 @@
  *
  */
 
-print $links[0]['content'];
-print $links[1]['content'];
-print $links[2]['content'];
-print $links[3]['content'];
-print $links[4]['content'];
+// Calculate rating in number of stars.
+$rating = round($results['rating'] / 25);
 
-print $results['count'];
+for ($i = 0; $i < 5; $i++) {
+  if (round($results['rating'] / 25) >= $i) {
+    $class = 'rate-fivestar-filled';
+  }
+  else {
+    $class = 'rate-fivestar-empty';
+  }
+  print '<span class="' . $class . '">' . $links[$i]['content'] . '</span>';
+}
 
 ?>
