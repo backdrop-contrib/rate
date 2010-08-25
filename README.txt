@@ -10,8 +10,9 @@ CONTENTS
 --------
 1. Installation
 2. Configuration
-2.1 Widget configuration
-3. Theming
+2.1. Widget configuration
+3. Widget types
+4. Theming
 
 1. Installation
 --------------------------------------------------------------------------------
@@ -26,12 +27,16 @@ Copy Rate into your modules directory (i.e. sites/all/modules) and enable Rate
 --------------------------------------------------------------------------------
 After installation, the configuration page will be available at
 admin/build/rate. This page shows a list with available widgets. Each widget
-have an edit and delete link. You can add a tab on the tab 'Add widget'. Both
-editing and adding a widget leads to the widget configuration (see section 2.1).
+have an edit and delete link. You can add a tab on the form below 'Add widget'.
+In this form you have to choose a widget type. See section 3 for more
+information on this topic. Both editing and adding a widget leads to the widget
+configuration (see §2.1).
 
 2.1. Widget configuration
---------------------------------------------------------------------------------
-The widget configuration form has the following elements:
+-------------------------
+The elements on the widget configuration form are explained in this paragraph.
+Note that some elements may not be available depending on the widget type you
+use, these are "Value type", "Options" and "Translate options".
 
 * Title
   The title is only used in the admin section. Use a recognizable name.
@@ -48,44 +53,110 @@ The widget configuration form has the following elements:
   * Makes me funny / boring / mad / angry: use options
 * Options
   These are the options displayed to the user. Each option has a value and a
-  label.
+  label. See §2.2 for more information on how to configure options.
+* Translate options
+  This checkbox determines if the labels used for the options should be
+  translated.
 * Node types
   Check the node types on which a rate widget should be available. There are
   separate columns for nodes and comments in this table.
+* Node display
+  Determines where the widget will be placed. There are three options:
+  * Do not add automatically: The widget is added in the node object, but not
+    within the content array. This only makes sense if you place the widget
+    somewere by hand in the node theming.
+  * Above the content: The content will be prepended by the widget.
+  * Below the content: Selected by default. The widget is appended to the
+    content.
+* Comment display
+  Same as node display, but for comments.
 
-3. Theming
+2.2. Options
+------------
+Options are the "buttons" dispayed in the widget. These can be visually
+different, depending on the theming. Options are generated as HTML links by
+default.
+
+Each option has a value and a label. Only the label is visible for the user, but
+the value is what he actually votes for when clicking the button.
+
+Values have to be configured according to the following rules:
+* Values must be integers (may be negative). thus '1', '2', '0', '-3' are all
+  right, but '2.3' is wrong.
+* Values must be unique across all options within the same widget.
+
+Which value you should use depends on the value type setting. When using points,
+these are the points which will be added when clicking that button. So "thumbs
+up" must have the value '1', "thumbs down" the value '-1' and "neutral" '0'. For
+'Percentage' you have to use whole numbers between 0 and 100. When using
+'Options', you may use any number as long as they are unique. It doesn't have to
+make sense as they are only used for storage.
+
+3. Widget types
 --------------------------------------------------------------------------------
-Available templates for theming are:
+Technically, widget types are sets of "value types" and "options" (see §2.1).
+They are called 'templates' in code.
+
+Some widget types have the option to let the user customize the options, others
+don't allow the user to do that. But all widget types have a predefined set of
+options.
+
+You may create widgets without choosing a "template" by selecting the 'Custom'
+type. By using 'Custom', you have to add the theming for this widget (see
+section 4).
+
+Widget types can be extended by 3rd party modules. The following widget types
+are provided by the rate module:
+
+* Thumbs up
+* Thumbs up / down
+* Fivestar
+* Emotion
+* Was this helpful?
+
+4. Theming
+--------------------------------------------------------------------------------
+Default templates for theming are:
 
 * rate-widget.tpl.php
-  This is the default template for all widgets.
+  This is the default template for all custom widgets.
 * rate-widget--NAME.tpl.php
   This is a widget specific template. Use the machine name for NAME. Replace
-  underscores by dashes in this name.
+  underscores by dashes in this name. This template is only available for custom
+  widgets.
+
+Theming for non-custom widget types are defined in the module which provides
+the widget type.
 
 You may use the following snippets in the template:
 
 * Print a button for a single option:
 
-    <?php print drupal_render($form[$form['#option_id'][1]]); ?>
+    <?php print $links[0]['content']; ?>
 
-  '1' is the value for the option (see section 2.1). Thus for a thumbs up / down
+  '0' is the first option (see §2.1). For a thumbs up / down
   configuration you will have:
 
-    <?php print drupal_render($form[$form['#option_id'][1]]); ?>
-    <?php print drupal_render($form[$form['#option_id'][-1]]); ?>
+    <?php print $links[0]['content']; ?>
+    <?php print $links[1]['content']; ?>
 
 * Print the rating when using value type 'percentage' or 'points':
 
-    <?php print $form['#results']['rating']; ?>
+    <?php print $results['rating']; ?>
 
 * Print the number of votes for a specific option (only available when using
   value type 'options'):
 
-    <?php print $form[$form['#option_id'][1]]['#votes']; ?>
+    <?php print $links[0]['votes']; ?>
 
-  '1' is the value for the option (see section 2.1).
+  '0' is the first option (see §2.1).
 
 * Print the total number of votes:
 
-  <?php print $form['#results']['count']; ?>
+  <?php print $results['count']; ?>
+
+* For thumbs up / down widgets, there are 2 special variables available which
+  provides the percentage of votes for up and down.
+
+  <?php print $results['up_percentage']; ?>
+  <?php print $results['down_percentage']; ?>
