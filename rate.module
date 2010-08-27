@@ -155,7 +155,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
 
   $links = array();
   foreach ($widget->options as $option) {
-    // This name must be unique for all submit buttons across the page, AHAH will fail otherwise.
+    // This name must be unique for all submit buttons across the page.
     $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
     $token = drupal_get_token($id);
     if (isset($_GET['rate']) && $_GET['rate'] == $token) {
@@ -163,22 +163,24 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
       drupal_goto($_GET['q'], _rate_get_query());
     }
     isset($widget->translate) or $widget->translate = TRUE;
-    $link = array(
-      'id' => $id,
-      'text' => $widget->translate ? t($option[1]) : $option[1],
-      'href' => url($_GET['q'], array('query' => _rate_get_query($token))),
-    );
+    $link_text = $widget->translate ? t($option[1]) : $option[1];
+    $link_href = url($_GET['q'], array('query' => _rate_get_query($token)));
     if (isset($results['options'])) {
-      $link['votes'] = $results['options'][$option[0]];
+      $link_votes = $results['options'][$option[0]];
     }
     else {
-      $link['votes'] = NULL;
+      $link_votes = NULL;
     }
     $links[] = array(
-      'content' => theme('rate_button', $widget, $link),
+      'text' => $link_text,
+      'href' => $link_href,
       'value' => $option[0],
-      'votes' => $link['votes'],
+      'votes' => $link_votes,
     );
+  }
+
+  if ($widget->css) {
+    drupal_add_css($widget->css);
   }
 
   return
@@ -216,14 +218,21 @@ function _rate_get_query($token = NULL) {
  * @return array
  */
 function rate_get_results($content_type, $content_id, $widget_id) {
+  global $user;
+  
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
-  $results = votingapi_select_results(array(
+  $criteria = array(
     'content_type' => $content_type,
     'content_id' => $content_id,
     'tag' => $widget->tag,
-  ));
+  );
+  $results = votingapi_select_results($criteria);
   $output = array('count' => 0);
+  if ($widget->value_type != 'option') {
+    // Set a default. Does not apply to options.
+    $output['rating'] = 0;
+  }
   if ($widget->value_type == 'option') {
     $output['options'] = array();
     foreach ($widget->options as $option) {
@@ -260,6 +269,17 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     $output['down_percent'] = 100 - $output['up_percent'];
   }
 
+  if ($user_vote = votingapi_select_votes($criteria += array('uid' => $user->uid, 'value_type' => $widget->value_type))) {
+    $output['user_vote'] = $user_vote[0]['value'];
+    if ($widget->value_type == 'option') {
+      foreach ($widget->options as $option) {
+        if ($option[0] == $user_vote[0]['value']) {
+          $output['user_vote'] = $option[1];
+        }
+      }
+    }
+  }
+  
   return $output;
 }
 
@@ -455,6 +475,13 @@ function rate_rate_templates() {
 }
 
 /**
+ * Implements hook_init().
+ */
+function rate_init() {
+  drupal_add_css(drupal_get_path('module', 'rate') . '/rate.css');
+}
+
+/**
  * Implements hook_theme().
  */
 function rate_theme() {
@@ -466,7 +493,7 @@ function rate_theme() {
     ),
     'rate_button' => array(
       'pattern' => 'rate_button__',
-      'arguments' => array('widget' => NULL, 'link' => NULL),
+      'arguments' => array('text' => NULL, 'href' => NULL, 'class' => NULL),
     ),
     'rate_admin_types' => array(
       'arguments' => array('element' => NULL),
@@ -505,9 +532,13 @@ function rate_theme() {
   );
 }
 
-function theme_rate_button($widget, $link) {
+function theme_rate_button($text, $href, $class = NULL) {
+  $classes = 'rate-button';
+  if ($class) {
+    $classes .= ' ' . $class;
+  }
   return
-    '<a id="' . $link['id'] . '" class="rate-button" rel="nofollow" href="' . htmlentities($link['href']) . '">' .
-    '<span>' . check_plain($link['text']) . '</span>' .
+    '<a class="' . $classes . '" rel="nofollow" href="' . htmlentities($href) . '">' .
+    check_plain($text) .
     '</a>';
 }

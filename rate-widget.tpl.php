@@ -9,12 +9,8 @@
  * file for information on theming widgets.
  */
 
-//foreach ($links as $link) {
-//  print $link['content'] . $link['votes'];
-//}
-
-print $links[0]['content'];
-
-print $results['count'];
+foreach ($links as $link) {
+  print theme('rate_button', $link['text'], $link['href']);
+}
 
 ?>
