@@ -13,6 +13,7 @@ CONTENTS
 2.1. Widget configuration
 3. Widget types
 4. Theming
+5. Credits
 
 1. Installation
 --------------------------------------------------------------------------------
