@@ -533,12 +533,15 @@ function rate_theme() {
 }
 
 function theme_rate_button($text, $href, $class = NULL) {
+  static $id = 0;
+  $id++;
+
   $classes = 'rate-button';
   if ($class) {
     $classes .= ' ' . $class;
   }
   return
-    '<a class="' . $classes . '" rel="nofollow" href="' . htmlentities($href) . '">' .
+    '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '">' .
     check_plain($text) .
     '</a>';
 }
