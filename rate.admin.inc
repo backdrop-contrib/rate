@@ -116,6 +116,15 @@ function rate_choose_template_form_submit($form, &$form_state) {
 function rate_widget_form(&$form_state, $id = NULL) {
   $form = array();
 
+  // Workaround core issue #591696 in AHAH forms.
+  // See http://drupal.org/node/591696#comment-3369036 for details.
+  if ($id) {
+    $form['#action'] = url(str_replace('%', $id, RATE_PATH_ADMIN_PAGE_EDIT));
+  }
+  else {
+    $form['#action'] = url(RATE_PATH_ADMIN_PAGE_ADD);
+  }
+
   if ($id) {
     $widgets = variable_get(RATE_VAR_WIDGETS, array());
     if (!isset($widgets[$id])) {
@@ -504,7 +513,7 @@ function rate_widget_form_ahah() {
   $javascript = drupal_add_js(NULL, NULL, 'header');
   drupal_json(array(
     'status' => TRUE,
-    'data' => drupal_render($container),
+    'data' => theme('status_messages') . drupal_render($container),
     'settings' => call_user_func_array('array_merge_recursive', $javascript['setting']),
   ));
 }
