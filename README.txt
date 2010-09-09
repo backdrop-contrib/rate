@@ -161,3 +161,10 @@ You may use the following snippets in the template:
 
   <?php print $results['up_percentage']; ?>
   <?php print $results['down_percentage']; ?>
+
+You can choose to not automatically add the widget to the node template. In that
+case, the widget can be used as:
+
+<?php print $node->rate_NAME['#value']; ?>
+
+Where NAME is the widget name.
