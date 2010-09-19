@@ -135,9 +135,10 @@ function rate_get_active_widgets($content_type, $type) {
  * @param string $content_type "node" or "comment"
  * @param int $content_id Node id (nid) or comment id (cid)
  * @param bool $teaser
+ * @param bool $include_div
  * @return array
  */
-function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = FALSE) {
+function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = FALSE, $include_div = TRUE) {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
 
@@ -183,10 +184,17 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
     drupal_add_css($widget->css);
   }
 
-  return
-    '<div class="rate-widget rate-widget-' . $widget_id . '" id="' . $div_id . '">' .
-    theme($theme, $links, $results) .
-    '</div>';
+  $widget_html = theme($theme, $links, $results);
+  if ($include_div) {
+    return
+      '<div class="rate-widget rate-widget-' . $widget_id . '" id="' . $div_id . '">' .
+      $widget_html .
+      '</div>';
+  }
+  else {
+    // We do not want the div for AJAX callbacks, we would have 2 div's otherwise.
+    return $widget_html;
+  }
 }
 
 /**
@@ -381,7 +389,7 @@ function rate_vote_ahah() {
     }
   }
 
-  print rate_generate_widget($widget_id, $content_type, $content_id);
+  print rate_generate_widget($widget_id, $content_type, $content_id, FALSE, FALSE);
 
   module_invoke_all('exit') & exit;
 }
