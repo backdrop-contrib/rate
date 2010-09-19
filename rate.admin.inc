@@ -143,6 +143,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
     $widget->options = array();
     $widget->template = 'custom';
     $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+    $widget->teaser_display = FALSE;
     $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
   }
   
@@ -154,6 +155,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
   // These options should always be available, but we have to check for legacy.
   isset($widget->translate) or $widget->translate = TRUE;
   isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+  isset($widget->teaser_display) or $widget->teaser_display = TRUE;
   isset($widget->comment_display) or $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
 
   if (!isset($widget->template)) {
@@ -364,6 +366,11 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#options' => $options,
     '#default_value' => $widget->node_display,
   );
+  $form['teaser_display'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display in teaser'),
+    '#default_value' => $widget->teaser_display,
+  );
   $form['comment_display'] = array(
     '#type' => 'radios',
     '#title' => t('Comment display'),
@@ -440,6 +447,7 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->options = array();
   $widget->template = $form['#widget_template'];
   $widget->node_display = $form_state['values']['node_display'];
+  $widget->teaser_display = (bool) $form_state['values']['teaser_display'];
   $widget->comment_display = $form_state['values']['comment_display'];
   
   if ($widget->template != 'custom') {

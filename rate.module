@@ -114,12 +114,15 @@ function rate_menu() {
  * @param string $type "node" or "comment"
  * @return array
  */
-function rate_get_active_widgets($content_type, $type) {
+function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $active = array();
   foreach ($widgets as $widget_id => $widget) {
     if ($content_type == 'node' && in_array($type, $widget->node_types)) {
-      $active[$widget_id] = $widget;
+      isset($widget->teaser_display) or $widget->teaser_display = TRUE;
+      if (!$teaser || $widget->teaser_display) {
+        $active[$widget_id] = $widget;
+      }
     }
     if ($content_type == 'comment' && in_array($type, $widget->comment_types)) {
       $active[$widget_id] = $widget;
@@ -324,7 +327,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value) {
 function rate_nodeapi(&$node, $op, $a3, $a4) {
 	// Adding the form to the node view
 	if ($op == 'view') {
-    $widgets = rate_get_active_widgets('node', $node->type);
+    $widgets = rate_get_active_widgets('node', $node->type, $a3);
     foreach ($widgets as $widget_id => $widget) {
       $widget_name = 'rate_' . $widget->name;
       isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;

@@ -69,6 +69,8 @@ use, these are "Value type", "Options" and "Translate options".
   * Above the content: The content will be prepended by the widget.
   * Below the content: Selected by default. The widget is appended to the
     content.
+* Display in teaser
+  Check this box if you want the widget to be visible in the node teaser.
 * Comment display
   Same as node display, but for comments.
 
