@@ -15,7 +15,7 @@ Drupal.behaviors.rate = function(context) {
     widget_id = ids[3];
 
     // Request new widget HTML.
-    $.get('/rate/vote/js?widget_id=' + widget_id + '&content_type=' + content_type + '&content_id=' + content_id + '&token=' + token, function(data) {
+    $.get(Drupal.settings.basePath + 'rate/vote/js?widget_id=' + widget_id + '&content_type=' + content_type + '&content_id=' + content_id + '&token=' + token, function(data) {
       $('#' + widget).html(data);
       Drupal.behaviors.rate($('#' + widget));
     });
