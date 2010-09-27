@@ -13,4 +13,4 @@ foreach ($links as $link) {
   print theme('rate_button', $link['text'], $link['href']);
 }
 
-?>
+print t('Total votes: !count', array('!count' => $results['count'])); ?>
