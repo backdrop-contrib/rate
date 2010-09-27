@@ -146,12 +146,17 @@ function rate_widget_form(&$form_state, $id = NULL) {
     $widget->teaser_display = FALSE;
     $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
   }
-  
-  if (isset($_GET['template'])) {
+
+  // Determine the template from GET (which is only available before the form
+  // was post) or from post values (only available after the form was posted).
+  if (isset($form_state['post']['widget_template'])) {
+    $widget->template = $form_state['post']['widget_template'];
+  }
+  elseif (isset($_GET['template'])) {
     // The template can be overridden (also used for changing templates).
     $widget->template = $_GET['template'];
   }
-  
+
   // These options should always be available, but we have to check for legacy.
   isset($widget->translate) or $widget->translate = TRUE;
   isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
@@ -181,7 +186,13 @@ function rate_widget_form(&$form_state, $id = NULL) {
   if ($id) {
     $form['#widget_id'] = $id;
   }
-  $form['#widget_template'] = $widget->template;
+
+  // The GET value for the template is not available anymore after posting,
+  // so we need to add the template as a hidden value.
+  $form['widget_template'] = array(
+    '#type' => 'hidden',
+    '#value' => $widget->template,
+  );
   $form['#widget_customizable'] = $widget->customizable;
 
   if ($id) {
@@ -424,7 +435,7 @@ function rate_widget_form_validate($form, &$form_state) {
       }
     }
     if (!count($used_values)) {
-      form_set_error('', t('Each widget must have at least one options.'));
+      form_set_error('', t('Each widget must have at least one option.'));
     }
   }
 }
@@ -445,7 +456,7 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->node_types = array();
   $widget->comment_types = array();
   $widget->options = array();
-  $widget->template = $form['#widget_template'];
+  $widget->template = $form_state['values']['widget_template'];
   $widget->node_display = $form_state['values']['node_display'];
   $widget->teaser_display = (bool) $form_state['values']['teaser_display'];
   $widget->comment_display = $form_state['values']['comment_display'];
