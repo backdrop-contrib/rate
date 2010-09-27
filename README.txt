@@ -13,7 +13,7 @@ CONTENTS
 2.1. Widget configuration
 3. Widget types
 4. Theming
-5. Credits
+5. Using rate in blocks or panels
 
 1. Installation
 --------------------------------------------------------------------------------
@@ -169,4 +169,21 @@ case, the widget can be used as:
 
 <?php print $node->rate_NAME['#value']; ?>
 
-Where NAME is the widget name.
+Replace NAME by the widget's machine readable name.
+
+5. Using rate in blocks or panels
+--------------------------------------------------------------------------------
+You can place the rate widget on a node page in a block or (mini) panel. Add
+a custom block with the PHP code input filter or a panel with PHP code and use
+the following code:
+
+<?php
+if (arg(0) == 'node' && is_numeric(arg(1)) && $node = node_load(arg(1))) {
+  node_invoke_nodeapi($node, 'view');
+  print $node->rate_NAME['#value'];
+}
+?>
+
+Replace NAME by the widget's machine readable name.
+
+The display setting for nodes must be set to "Do not add automatically".
