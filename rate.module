@@ -480,7 +480,7 @@ function rate_rate_templates() {
   $templates['helpful']->css = drupal_get_path('module', 'rate') . '/templates/helpful.css';
   $templates['helpful']->customizable = TRUE;
   $templates['helpful']->translate = TRUE;
-  $templates['helpful']->template_title = t('Was this helpful?');
+  $templates['helpful']->template_title = t('Yes / no');
 
   return $templates;
 }
