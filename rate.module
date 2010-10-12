@@ -19,6 +19,7 @@ define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/build/rate/%/delete');
 define('RATE_PATH_ADMIN_PAGE_TEMPLATE', 'admin/build/rate/%/template');
 define('RATE_PATH_ADMIN_AHAH', 'rate/options/js');
 define('RATE_PATH_AHAH', 'rate/vote/js');
+define('RATE_PATH_RESULTS_PAGE', 'node/%node/results');
 
 // Define constants for variable names.
 define('RATE_VAR_WIDGETS', 'rate_widgets');
@@ -27,7 +28,7 @@ define('RATE_VAR_WIDGETS', 'rate_widgets');
  * Implements hook_perm().
  */
 function rate_perm() {
-  return array('administer rate');
+  return array('administer rate', 'view rate results page');
 }
 
 /**
@@ -103,6 +104,17 @@ function rate_menu() {
 		'access arguments' => array('access content'),
 		'type' => MENU_CALLBACK
 	);
+
+  $menu[RATE_PATH_RESULTS_PAGE] = array(
+    'title' => t('Voting results'),
+    'page callback' => 'rate_results_page',
+    'page arguments' => array(1),
+    'access callback' => 'rate_results_page_sccess',
+    'access arguments' => array('view rate results page', 1),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'file' => 'rate.results.inc',
+  );
 
 	return $menu;
 }
@@ -494,6 +506,19 @@ function rate_rate_templates() {
  */
 function rate_init() {
   drupal_add_css(drupal_get_path('module', 'rate') . '/rate.css');
+}
+
+/**
+ * Menu access callback.
+ */
+function rate_results_page_sccess($permission, $node) {
+  if (!user_access($permission)) {
+    return FALSE;
+  }
+  if (!rate_get_active_widgets('node', $node->type)) {
+    return FALSE;
+  }
+  return TRUE;
 }
 
 /**

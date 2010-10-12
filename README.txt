@@ -13,7 +13,8 @@ CONTENTS
 2.1. Widget configuration
 3. Widget types
 4. Theming
-5. Using rate in blocks or panels
+5. Voting results
+6. Using rate in blocks or panels
 
 1. Installation
 --------------------------------------------------------------------------------
@@ -24,6 +25,9 @@ Please follow the readme file provided by VotingAPI on how to install.
 Copy Rate into your modules directory (i.e. sites/all/modules) and enable Rate
 (on admin/build/modules).
 
+To view the charts in the vote results tab, you also need to install the "chart"
+module, which you can get at http://drupal.org/project/chart.
+
 2. Configuration
 --------------------------------------------------------------------------------
 After installation, the configuration page will be available at
@@ -32,6 +36,9 @@ have an edit and delete link. You can add a tab on the form below 'Add widget'.
 In this form you have to choose a widget type. See section 3 for more
 information on this topic. Both editing and adding a widget leads to the widget
 configuration (see §2.1).
+
+If you want users other than admin to access the voting results page, you need
+to give them the "view rate results page" permission on admin/user/permissions.
 
 2.1. Widget configuration
 -------------------------
@@ -171,7 +178,17 @@ case, the widget can be used as:
 
 Replace NAME by the widget's machine readable name.
 
-5. Using rate in blocks or panels
+5. Voting results
+--------------------------------------------------------------------------------
+Voting results are available on the voting results page. You can get there by
+clicking the "Voting results" tab on the node page. Note that this tab is hidden
+if the node does not have any rate widgets or if you do not have the
+"view rate results" permission.
+
+When the chart module is enabled, you will find charts of the results in the
+last 30 days on this page.
+
+6. Using rate in blocks or panels
 --------------------------------------------------------------------------------
 You can place the rate widget on a node page in a block or (mini) panel. Add
 a custom block with the PHP code input filter or a panel with PHP code and use
