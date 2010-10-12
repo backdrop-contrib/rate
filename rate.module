@@ -281,11 +281,15 @@ function rate_get_results($content_type, $content_id, $widget_id) {
   }
 
   if ($user_vote = votingapi_select_votes($criteria += array('uid' => $user->uid, 'value_type' => $widget->value_type))) {
-    $output['user_vote'] = $user_vote[0]['value'];
-    if ($widget->value_type == 'option') {
-      foreach ($widget->options as $option) {
-        if ($option[0] == $user_vote[0]['value']) {
-          $output['user_vote'] = $option[1];
+    // Check the anonymous window. We should not display this vote when its anonymous and casted too long ago.
+    $anonymous_window = variable_get('votingapi_anonymous_window', 86400);
+    if ($user->uid || $user_vote[0]['timestamp'] > time() - $anonymous_window || $anonymous_window == -1) {
+      $output['user_vote'] = $user_vote[0]['value'];
+      if ($widget->value_type == 'option') {
+        foreach ($widget->options as $option) {
+          if ($option[0] == $user_vote[0]['value']) {
+            $output['user_vote'] = $option[1];
+          }
         }
       }
     }
