@@ -304,7 +304,11 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     $output['down_percent'] = 100 - $output['up_percent'];
   }
 
-  if ($user_vote = votingapi_select_votes($criteria += array('uid' => $user->uid, 'value_type' => $widget->value_type))) {
+  $criteria += array('uid' => $user->uid, 'value_type' => $widget->value_type);
+  if (!$user->uid) {
+    $criteria += array('vote_source' => $_SERVER['REMOTE_ADDR']);
+  }
+  if ($user_vote = votingapi_select_votes($criteria)) {
     // Check the anonymous window. We should not display this vote when its anonymous and casted too long ago.
     $anonymous_window = variable_get('votingapi_anonymous_window', 86400);
     if ($user->uid || $user_vote[0]['timestamp'] > time() - $anonymous_window || $anonymous_window == -1) {
