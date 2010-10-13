@@ -4,3 +4,4 @@ description = Add an expiration time to rate widgets
 core = 6.x
 package = Voting
 dependencies[] = rate
+dependencies[] = date
