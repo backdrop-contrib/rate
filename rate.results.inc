@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 /**
  * Generate the rate results page.

@@ -157,6 +157,15 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
 
+  // Widgets are only disabled by external modules.
+  $widget->disabled = FALSE;
+
+  // Let other modules alter the rate widget.
+  foreach (module_implements('rate_widget') as $module) {
+    $hook = "{$module}_rate_widget";
+    $hook('view', $widget, array('content_type' => $content_type, 'content_id' => $content_id, 'teaser' => $teaser));
+  }
+
   $div_id = "rate-$content_type-$content_id-$widget_id";
   $theme_name = str_replace('-', '_', $widget->name);
   $theme = array('rate_widget__' . $theme_name, 'rate_widget');
@@ -199,7 +208,10 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
     drupal_add_css($widget->css);
   }
 
-  $widget_html = theme($theme, $links, $results);
+  $disabled = $widget->disabled;
+  $disabled_reason = isset($widget->disabled_reason) ? $widget->disabled_reason : NULL;
+  
+  $widget_html = theme($theme, $links, $results, $disabled, $disabled_reason);
   if ($include_div) {
     return
       '<div class="rate-widget rate-widget-' . $widget_id . '" id="' . $div_id . '">' .
@@ -528,7 +540,7 @@ function rate_theme() {
   return array(
     'rate_widget' => array(
       'pattern' => 'rate_widget__',
-      'arguments' => array('links' => NULL, 'results' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
       'template' => 'rate-widget',
     ),
     'rate_button' => array(
@@ -545,27 +557,27 @@ function rate_theme() {
     ),
     
     'rate_template_thumbs_up' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
       'template' => 'thumbs-up',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_thumbs_up_down' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
       'template' => 'thumbs-up-down',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_fivestar' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
       'template' => 'fivestar',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_emotion' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
       'template' => 'emotion',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_helpful' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
       'template' => 'helpful',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),

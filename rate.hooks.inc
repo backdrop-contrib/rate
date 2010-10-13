@@ -33,3 +33,26 @@ function hook_rate_templates() {
 
   return $templates;
 }
+
+/**
+ * Hook on actions done on rate widgets.
+ *
+ * @param string $op
+ * @param object $widget
+ * @param array $values Form values from rate_widget_form (on insert and update)
+ *   or an arra with the keys "content_type", "content_id"
+ *   and "teaser" (on load).
+ */
+function hook_rate_widget($op, &$widget, $values = NULL) {
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      // Elements which are added to the $widget are saved automatically.
+      break;
+    case 'delete':
+      break;
+    case 'view':
+      // The $widget object may be altered here before display.
+      break;
+  }
+}

@@ -27,7 +27,12 @@ for ($i = 0; $i < 5; $i++) {
   else {
     $class = 'rate-fivestar-btn-empty';
   }
-  print theme('rate_button', $links[$i]['text'], $links[$i]['href'], $class);
+  if ($disabled) {
+    print '<div class="' . $class . '"></div>';
+  }
+  else {
+    print theme('rate_button', $links[$i]['text'], $links[$i]['href'], $class);
+  }
 }
 
 print '<div class="rate-info">' . $info . '</div>';

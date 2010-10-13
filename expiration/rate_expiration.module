@@ -1,0 +1,57 @@
+<?php
+// $Id$
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
+  if ($form['#widget_id']) {
+    $widgets = variable_get(RATE_VAR_WIDGETS, array());
+    $widget = $widgets[$form['#widget_id']];
+  }
+  else {
+    $widget = new stdClass();
+  }
+  
+  $form['expiration'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Expiration settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $options = array(-1 => t('Never')) + drupal_map_assoc(array(300, 900, 1800, 3600, 10800, 21600, 32400, 43200, 86400, 172800, 345600, 604800, 1209600, 1814400, 2419200), 'format_interval');
+  $form['expiration']['expiration'] = array(
+    '#type' => 'select',
+    '#title' => t('Disable voting after this period'),
+    '#options' => $options,
+    '#default_value' => isset($widget->expiration) ? $widget->expiration : -1,
+    '#description' => t('Time that has to elapse after creating a node before voting is disabled.'),
+  );
+}
+
+/**
+ * Implements hook_rate_widget().
+ */
+function rate_expiration_rate_widget($op, &$widget, $values = NULL) {
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      $widget->expiration = $values['expiration'];
+      break;
+    case 'delete':
+      break;
+    case 'view':
+      if ($values['content_type'] == 'node' && isset($widget->expiration) && $widget->expiration > 0) {
+        if ($node = node_load($values['content_id'])) {
+          $expiration_timestamp = $node->created + $widget->expiration;
+          if ($expiration_timestamp <= time()) {
+            $widget->disabled = TRUE;
+            $widget->disabled_reason = 'expired';
+          }
+        }
+      }
+      break;
+  }
+}
+

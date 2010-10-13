@@ -366,23 +366,30 @@ function rate_widget_form(&$form_state, $id = NULL) {
     );
   }
 
+  $form['display'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Display settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
   $options = array(
     RATE_DISPLAY_DISABLE => t('Do not add automatically'),
     RATE_DISPLAY_ABOVE_CONTENT => t('Above the content'),
     RATE_DISPLAY_BELOW_CONTENT => t('Below the content'),
   );
-  $form['node_display'] = array(
+  $form['display']['node_display'] = array(
     '#type' => 'radios',
     '#title' => t('Node display'),
     '#options' => $options,
     '#default_value' => $widget->node_display,
   );
-  $form['teaser_display'] = array(
+  $form['display']['teaser_display'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display in teaser'),
     '#default_value' => $widget->teaser_display,
   );
-  $form['comment_display'] = array(
+  $form['display']['comment_display'] = array(
     '#type' => 'radios',
     '#title' => t('Comment display'),
     '#options' => $options,
@@ -392,6 +399,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
+    '#weight' => 50,
   );
   
   return $form;
@@ -494,7 +502,15 @@ function rate_widget_form_submit($form, &$form_state) {
       $widget->comment_types[] = $match[1];
     }
   }
-  
+
+  // Let other modules alter the rate widget.
+  foreach (module_implements('rate_widget') as $module) {
+    $hook = "{$module}_rate_widget";
+    $op = empty($form['#widget_id']) ? 'insert' : 'update';
+    $hook($op, $widget, $form_state['values']);
+  }
+
+  // Save the widget.
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   if (!empty($form['#widget_id'])) {
     $id = (int) $form['#widget_id'];
@@ -631,6 +647,12 @@ function rate_widget_delete_form_submit($form, &$form_state) {
     unset($widgets[$form['#widget_id']]);
     variable_set(RATE_VAR_WIDGETS, $widgets);
     drupal_set_message(t('Widget %title has been deleted.', array('%title' => $title)));
+
+    // Let other modules act on this action.
+    foreach (module_implements('rate_widget') as $module) {
+      $hook = "{$module}_rate_widget";
+      $hook('delete', $widgets[$form['#widget_id']], $form_state['values']);
+    }
   }
   $form_state['redirect'] = RATE_PATH_ADMIN_PAGE;
 }
