@@ -6,6 +6,13 @@
  * Rate module
  */
 
+// Define display modes for the rate widget.
+define('RATE_FULL', 1);
+define('RATE_COMPACT', 2);
+define('RATE_DISABLED', 3);
+define('RATE_CLOSED', 4);
+
+// Define display modes for node / comment bodies.
 define('RATE_DISPLAY_DISABLE', 0);
 define('RATE_DISPLAY_ABOVE_CONTENT', 1);
 define('RATE_DISPLAY_BELOW_CONTENT', 2);
@@ -109,7 +116,7 @@ function rate_menu() {
     'title' => t('Voting results'),
     'page callback' => 'rate_results_page',
     'page arguments' => array(1),
-    'access callback' => 'rate_results_page_sccess',
+    'access callback' => 'rate_results_page_access',
     'access arguments' => array('view rate results page', 1),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
@@ -153,12 +160,12 @@ function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
  * @param bool $include_div
  * @return array
  */
-function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = FALSE, $include_div = TRUE) {
+function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE) {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
 
-  // Widgets are only disabled by external modules.
-  $widget->disabled = FALSE;
+  // Store the display mode in $widget, so it can be altered by hook_rate_widget.
+  $widget->mode = $mode;
 
   // Let other modules alter the rate widget.
   foreach (module_implements('rate_widget') as $module) {
@@ -166,7 +173,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
     $hook('view', $widget, array('content_type' => $content_type, 'content_id' => $content_id, 'teaser' => $teaser));
   }
 
-  $div_id = "rate-$content_type-$content_id-$widget_id";
+  $div_id = "rate-$content_type-$content_id-$widget_id-$mode";
   $theme_name = str_replace('-', '_', $widget->name);
   $theme = array('rate_widget__' . $theme_name, 'rate_widget');
   if (isset($widget->theme)) {
@@ -198,7 +205,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
     }
     $links[] = array(
       'text' => $link_text,
-      'href' => $link_href,
+      'href' => $widget->mode != RATE_DISABLED && $widget->mode != RATE_CLOSED ? $link_href : NULL,
       'value' => $option[0],
       'votes' => $link_votes,
     );
@@ -208,10 +215,14 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $teaser = 
     drupal_add_css($widget->css);
   }
 
-  $disabled = $widget->disabled;
-  $disabled_reason = isset($widget->disabled_reason) ? $widget->disabled_reason : NULL;
-  
-  $widget_html = theme($theme, $links, $results, $disabled, $disabled_reason);
+  if ($widget->mode == RATE_CLOSED && ($mode == RATE_COMPACT || $mode == RATE_DISABLED)) {
+    // The widget was closed by hook_rate_widget, but we want to display a compact or disabled
+    // widget. Set the mode back to compact / disabled in order to display a compact / disabled
+    // widget with disabled voting buttons.
+    $widget->mode = $mode;
+  }
+
+  $widget_html = theme($theme, $links, $results, $widget->mode);
   if ($include_div) {
     return
       '<div class="rate-widget rate-widget-' . $widget_id . '" id="' . $div_id . '">' .
@@ -364,7 +375,7 @@ function rate_nodeapi(&$node, $op, $a3, $a4) {
       $widget_name = 'rate_' . $widget->name;
       isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
       $widget_code = array(
-        '#value' => rate_generate_widget($widget_id, 'node', $node->nid, (bool) $node->teaser),
+        '#value' => rate_generate_widget($widget_id, 'node', $node->nid),
         '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? 0 : 50,
       );
       if ($widget->node_display == RATE_DISPLAY_DISABLE) {
@@ -410,6 +421,7 @@ function rate_vote_ahah() {
   $content_type = $_GET['content_type'];
   $content_id = (int) $_GET['content_id'];
   $widget_id = (int) $_GET['widget_id'];
+  $widget_mode = (int) $_GET['widget_mode'];
 
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
@@ -424,7 +436,7 @@ function rate_vote_ahah() {
     }
   }
 
-  print rate_generate_widget($widget_id, $content_type, $content_id, FALSE, FALSE);
+  print rate_generate_widget($widget_id, $content_type, $content_id, $widget_mode, FALSE);
 
   module_invoke_all('exit') & exit;
 }
@@ -502,17 +514,17 @@ function rate_rate_templates() {
   $templates['emotion']->translate = TRUE;
   $templates['emotion']->template_title = t('Emotion');
 
-  $templates['helpful'] = new stdClass();
-  $templates['helpful']->value_type = 'option';
-  $templates['helpful']->options = array(
+  $templates['yesno'] = new stdClass();
+  $templates['yesno']->value_type = 'option';
+  $templates['yesno']->options = array(
     array(1, 'yes'),
     array(2, 'no'),
   );
-  $templates['helpful']->theme = 'rate_template_helpful';
-  $templates['helpful']->css = drupal_get_path('module', 'rate') . '/templates/helpful.css';
-  $templates['helpful']->customizable = TRUE;
-  $templates['helpful']->translate = TRUE;
-  $templates['helpful']->template_title = t('Yes / no');
+  $templates['yesno']->theme = 'rate_template_yesno';
+  $templates['yesno']->css = drupal_get_path('module', 'rate') . '/templates/yesno.css';
+  $templates['yesno']->customizable = TRUE;
+  $templates['yesno']->translate = TRUE;
+  $templates['yesno']->template_title = t('Yes / no');
 
   return $templates;
 }
@@ -527,7 +539,7 @@ function rate_init() {
 /**
  * Menu access callback.
  */
-function rate_results_page_sccess($permission, $node) {
+function rate_results_page_access($permission, $node) {
   if (!user_access($permission)) {
     return FALSE;
   }
@@ -538,13 +550,65 @@ function rate_results_page_sccess($permission, $node) {
 }
 
 /**
+ * Implements hook_votingapi_views_formatters().
+ */
+function rate_votingapi_views_formatters($details = array()) {
+  if ($details->field == 'value') {
+    return array(
+      'rate_views_widget_disabled' => t('Rate widget (display only)'),
+      'rate_views_widget_compact' => t('Rate widget (compact)'),
+      'rate_views_widget' => t('Rate widget'),
+    );
+  }
+}
+
+function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
+  if ($field->view->base_table != 'node') {
+    return '';
+  }
+
+  // Find the VotingAPI tag and value_type for this field.
+  foreach ($field->query->table_queue[$field->relationship]['join']->extra as $votingapi_setting) {
+    if ($votingapi_setting['field'] == 'tag') {
+      $tag = $votingapi_setting['value'];
+    }
+    elseif ($votingapi_setting['field'] == 'value_type') {
+      $value_type = $votingapi_setting['value'];
+    }
+  }
+  
+  $content_type = 'node';
+  $content_id = $columns->nid;
+  $node_type = isset($columns->node_type) ? $columns->node_type : db_result(db_query('SELECT type FROM {node} WHERE nid = %d', $columns->nid));
+
+  // Loop through all the widgets and search for a suitable widget to display.
+  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  foreach ($widgets as $widget_id => $widget) {
+    if ($tag == $widget->tag && $value_type == $widget->value_type && in_array($node_type, $widget->node_types)) {
+      return rate_generate_widget($widget_id, $content_type, $content_id, $mode);
+    }
+  }
+
+  // No suitable widget was found.
+  return '';
+}
+
+function rate_views_widget_disabled($value, $field, $columns) {
+  return rate_views_widget($value, $field, $columns, RATE_DISABLED);
+}
+
+function rate_views_widget_compact($value, $field, $columns) {
+  return rate_views_widget($value, $field, $columns, RATE_COMPACT);
+}
+
+/**
  * Implements hook_theme().
  */
 function rate_theme() {
   return array(
     'rate_widget' => array(
       'pattern' => 'rate_widget__',
-      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'rate-widget',
     ),
     'rate_button' => array(
@@ -559,30 +623,31 @@ function rate_theme() {
       'arguments' => array('element' => NULL),
       'file' => 'rate.admin.inc',
     ),
-    
+
+    // Templates for default widget types.
     'rate_template_thumbs_up' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'thumbs-up',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_thumbs_up_down' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'thumbs-up-down',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_fivestar' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'fivestar',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_emotion' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'emotion',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
-    'rate_template_helpful' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'disabled' => NULL, 'disabled_reason' => NULL),
-      'template' => 'helpful',
+    'rate_template_yesno' => array(
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'template' => 'yesno',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
   );
@@ -596,8 +661,17 @@ function theme_rate_button($text, $href, $class = NULL) {
   if ($class) {
     $classes .= ' ' . $class;
   }
-  return
-    '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '">' .
-    check_plain($text) .
-    '</a>';
+  if (empty($href)) {
+    // Widget is disabled or closed.
+    return
+      '<span class="' . $classes . '" id="rate-button-' . $id . '">' .
+      check_plain($text) .
+      '</span>';
+  }
+  else {
+    return
+      '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '">' .
+      check_plain($text) .
+      '</a>';
+  }
 }

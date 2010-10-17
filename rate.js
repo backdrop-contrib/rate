@@ -1,6 +1,6 @@
 Drupal.behaviors.rate = function(context) {
   $('a.rate-button', context).click(function() {
-    
+
     // Reveal the widget id.
     $('#' + this.id).parents('div.rate-widget').each(function() {
       widget = this.id;
@@ -9,13 +9,14 @@ Drupal.behaviors.rate = function(context) {
     // Extract required variables using regexp.
     ids = this.getAttribute('href').match(/rate\=([a-f0-9]{32})/);
     token = ids[1];
-    ids = widget.match(/^rate\-([a-z]+)\-([0-9]+)\-([0-9]+)$/);
+    ids = widget.match(/^rate\-([a-z]+)\-([0-9]+)\-([0-9]+)\-([0-9])$/);
     content_type = ids[1];
     content_id = ids[2];
     widget_id = ids[3];
+    widget_mode = ids[4];
 
     // Request new widget HTML.
-    $.get(Drupal.settings.basePath + 'rate/vote/js?widget_id=' + widget_id + '&content_type=' + content_type + '&content_id=' + content_id + '&token=' + token, function(data) {
+    $.get(Drupal.settings.basePath + 'rate/vote/js?widget_id=' + widget_id + '&content_type=' + content_type + '&content_id=' + content_id + '&widget_mode=' + widget_mode + '&token=' + token, function(data) {
       $('#' + widget).html(data);
       Drupal.behaviors.rate($('#' + widget));
     });

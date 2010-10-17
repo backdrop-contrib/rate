@@ -7,6 +7,11 @@
  * Add configuration options to the widget form.
  */
 function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
+  if (isset($form['error'])) {
+    // Do not add our fields on forms with an error.
+    return;
+  }
+
   if ($form['#widget_id']) {
     $widgets = variable_get(RATE_VAR_WIDGETS, array());
     $widget = $widgets[$form['#widget_id']];
@@ -14,7 +19,7 @@ function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
   else {
     $widget = new stdClass();
   }
-  
+
   $form['expiration'] = array(
     '#type' => 'fieldset',
     '#title' => t('Expiration settings'),
@@ -69,8 +74,7 @@ function rate_expiration_rate_widget($op, &$widget, $values = NULL) {
             !empty($end) or $end = $node->created + $widget->expiration;
           }
           if (($end > 0 && $end <= time()) || ($start > 0 && $start > time())) {
-            $widget->disabled = TRUE;
-            $widget->disabled_reason = 'expired';
+            $widget->mode = RATE_CLOSED;
           }
         }
       }

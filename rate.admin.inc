@@ -168,8 +168,8 @@ function rate_widget_form(&$form_state, $id = NULL) {
   }
   elseif ($widget->template != 'custom') {
     if (!$template = _rate_get_template($widget->template)) {
-      $form['info'] = array(
-        '#value' => t('You cannot edit this widget because it was built using the template %template which does not exists anymore.'),
+      $form['error'] = array(
+        '#value' => t('You cannot edit this widget because it was built using the template %template which does not exists anymore.', array('%template' => $widget->template)),
       );
       return $form;
     }

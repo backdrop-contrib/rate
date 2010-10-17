@@ -1,4 +1,4 @@
-a.rate-helpful-btn {
+a.rate-yesno-btn {
   display: block;
   float: left;
   background: #eee;
@@ -9,12 +9,12 @@ a.rate-helpful-btn {
   border: 1px solid #ccc;
 }
 
-a.rate-helpful-btn:hover {
+a.rate-yesno-btn:hover {
   background: #ddd;
   text-decoration: none;
 }
 
-.rate-helpful-votes {
+.rate-yesno-votes {
   display: block;
   float: left;
   margin-right: 5px;

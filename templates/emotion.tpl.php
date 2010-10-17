@@ -2,15 +2,7 @@
 /**
  * @file
  * Rate widget theme
- *
- * This is the default template for rate widgets. See section 3 of the README
- * file for information on theming widgets.
  */
-
-if ($results['user_vote']) {
-  $info = t('You voted \'@option\'.', array('@option' => $results['user_vote']));
-}
-
 ?>
 
 <?php foreach ($links as $link): ?>
@@ -19,7 +11,18 @@ if ($results['user_vote']) {
 <?php endforeach; ?>
 
 <?php
-if (!empty($info)) {
-  print '<div class="rate-info">' . $info . '</div>';
+
+if ($mode == RATE_FULL || $mode == RATE_CLOSED) {
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($results['user_vote']) {
+    $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
+  }
+  if ($info) {
+    print '<div class="rate-info">' . implode(' ', $info) . '</div>';
+  }
 }
+
 ?>

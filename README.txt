@@ -14,7 +14,9 @@ CONTENTS
 3. Widget types
 4. Theming
 5. Voting results
-6. Using rate in blocks or panels
+6. Views integration
+7. Expiration (close voting on a specified date)
+8. Using rate in blocks or panels
 
 1. Installation
 --------------------------------------------------------------------------------
@@ -25,8 +27,13 @@ Please follow the readme file provided by VotingAPI on how to install.
 Copy Rate into your modules directory (i.e. sites/all/modules) and enable Rate
 (on admin/build/modules).
 
-To view the charts in the vote results tab, you also need to install the "chart"
-module, which you can get at http://drupal.org/project/chart.
+Optional modules:
+
+* Chart
+  To view the charts in the vote results tab, you also need to install the "chart"
+  module, which you can get at http://drupal.org/project/chart.
+* Date
+  The date module is a requirement for the Rate Expiration module.
 
 2. Configuration
 --------------------------------------------------------------------------------
@@ -51,6 +58,12 @@ use, these are "Value type", "Options" and "Translate options".
 * Machine readable name
   Name used for technical purposes. You may only contain alphanumeric characters
   and underscores.
+* Tag
+  This is the tag used by VotingAPI to store the voting results. Voting results
+  from different tags are never merged. You can use this to allow multiple
+  ratings on the same node (i.e. for "comfort", "location", "services" etc.).
+  The default tag for ratings is "vote". Use this value if you do not allow
+  ratings on specific aspects.
 * Value type
   This determines how vote results are totaled. VotingAPI supports three value
   types by default: 'Percentage' votes are averaged, 'Points' votes are summed
@@ -189,7 +202,47 @@ When the chart module is enabled, you will find charts of the results in the
 last 30 days on this page. The chart may show less than 30 days if there was no
 activity on all days.
 
-6. Using rate in blocks or panels
+The voting results page is only available for nodes.
+
+6. Views integration
+--------------------------------------------------------------------------------
+This module provides views integration via the VotingAPI module. To add a rate
+widget in your view, first add a relation to "Node: Vote results". You have to
+configure a few options here. The "Value type" and "Vote tag" needs to be the
+same as used for the widget (see §2.1). The "aggregate" function must be
+"Number of votes".
+
+After adding the relationship, you can add the field "Vote results: Value" to
+your view. In the "Appearance" box you may choose one of the following:
+
+* Rate widget (display only)
+  This shows a disabled widget. Uses are allowed to see the results, but cannot
+  click the buttons.
+* Rate widget (compact)
+  This shows a compact widget. This is the basic widget without the textual
+  information.
+* Rate widget
+  This shows the full widget (as on the node page).
+
+You are advised to add the "Node: Type" field to your view fields. If you do
+not, an additional query will be executed per row. You may exclude this field
+from display.
+
+Views integration for comments is not supported at the moment.
+
+7. Expiration (close voting on a specified date)
+--------------------------------------------------------------------------------
+The optional Rate Expiration module allows you to close voting on a specified
+date. When adding or editing a rate widget, you will find the following options:
+
+* Disable voting after this period
+  When set, voting is closed when the configured period has ellapsed since node
+  creation. Users are not able to click the buttons when voting is closed.
+* Allow override
+  When checked, the start- en enddates for voting can be set in the node edit
+  form.
+
+8. Using rate in blocks or panels
 --------------------------------------------------------------------------------
 You can place the rate widget on a node page in a block or (mini) panel. Add
 a custom block with the PHP code input filter or a panel with PHP code and use
