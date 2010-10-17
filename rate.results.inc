@@ -35,11 +35,33 @@ function rate_results_page($node) {
     }
     $output .= '</p>';
 
+    // Display a table with vote counts per button.
+    if (count($widget->options) > 1) {
+      $rows = array();
+      foreach ($widget->options as $option) {
+        $sql = 'SELECT COUNT(*) as count
+        FROM {votingapi_vote} vv
+        WHERE vv.content_type = \'%s\'
+        AND vv.content_id = %d
+        AND vv.value_type = \'%s\'
+        AND vv.value = \'%s\'
+        AND vv.tag = \'%s\'
+        AND vv.timestamp > %d';
+        $res = db_query($sql, 'node', $node->nid, $widget->value_type, $option[0], $widget->tag);
+        $total_count = db_result($res);
+        $title = $widget->translate ? t($option[1]) : $option[1];
+        $rows[] = array($title, $total_count);
+      }
+      $header = array(t('Button'), t('Votes'));
+      $output .= '<h4>' . t('Total votes per button') . '</h4>';
+      $output .= theme('table', $header, $rows);
+    }
+
     // Display a graph if the chart module is enabled.
     if (module_exists('chart')) {
       $chart = array(
         '#chart_id' => 'rate_node_' . $node->nid . '_' . $widget->name,
-        '#type' => CHART_TYPE_LINE,
+        '#type' => CHART_TYPE_BAR_V_GROUPED,
         '#size' => chart_size(500, 200),
         '#adjust_resolution' => FALSE,
         '#data' => array(),
@@ -88,17 +110,21 @@ function rate_results_page($node) {
           $label = date('j', time() - ($i * 86400));
           $chart['#mixed_axis_labels'][CHART_AXIS_X_BOTTOM][1][] = chart_mixed_axis_label($label);
         }
+        // Define colors for the bars. The first color is green, second is red. This is for
+        // thumbs up / down voting (the first is up, which needs to be green).
         $colors = array(
-          'ff0000', '01df01', '0101df', 'ffbc00', '01dfd6',
+          '01df01', 'ff0000', '0101df', 'ffbc00', '01dfd6',
           'b404ae', '8a4b08', '38610b', '610b38', '610b5e',
         );
         $x = 0;
+        $chart['#bar_size'] = chart_bar_size(ceil(20 / count($chart['#data'])), 0);
         foreach ($chart['#data'] as $title => $data) {
           $chart['#legends'][] = $title;
           $chart['#data_colors'][] = $colors[$x % count($colors)];
           ++$x;
         }
         $chart['#mixed_axis_labels'][CHART_AXIS_Y_LEFT][0][] = chart_mixed_axis_range_label(0, $max_count);
+        $output .= '<h4>' . t('Votes in the last @num days', array('@num' => $oldest)) . '</h4>';
         $output .= chart_render($chart);
       }
     }
