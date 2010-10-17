@@ -186,7 +186,8 @@ if the node does not have any rate widgets or if you do not have the
 "view rate results" permission.
 
 When the chart module is enabled, you will find charts of the results in the
-last 30 days on this page.
+last 30 days on this page. The chart may show less than 30 days if there was no
+activity on all days.
 
 6. Using rate in blocks or panels
 --------------------------------------------------------------------------------

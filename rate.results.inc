@@ -125,6 +125,7 @@ function rate_results_page($node) {
         }
         $chart['#mixed_axis_labels'][CHART_AXIS_Y_LEFT][0][] = chart_mixed_axis_range_label(0, $max_count);
         $output .= '<h4>' . t('Votes in the last @num days', array('@num' => $oldest)) . '</h4>';
+        $output .= '<p>' . t('Showed results are votes per day per button. The horizontal axis shows the days of the month. The vertical axis shows the number of votes.') . '</p>';
         $output .= chart_render($chart);
       }
     }
