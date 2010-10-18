@@ -93,6 +93,24 @@ use, these are "Value type", "Options" and "Translate options".
   Check this box if you want the widget to be visible in the node teaser.
 * Comment display
   Same as node display, but for comments.
+* Roles
+  Check the roles which are allowed to vote using this widget. All roles are
+  allowed to vote if no roles are checked.
+* Behaviour when user has no permissions to vote
+  If the user may not vote on the widget, what needs to be done? Options are:
+  * Redirect to login and show message.
+    The widget is visible just as if you may vote on in. If the user clicks on
+    a button, the user is redirected to the user page which shows the message
+    'You must login before you can vote.'. The user is redirected back to the
+    page with the rate widget after login.
+  * Redirect to login but do not show a message.
+    This behaviour is the same as the first option, except for the fact that it
+    does not display a message.
+  * Show a disabled widget (with non clickable buttons).
+    The user is able to see the widget, but cannot click on it.
+  * Hide widget
+    The widget is not visible to the user if he does not have the permission to
+    vote.
 
 2.2. Options
 ------------

@@ -145,6 +145,8 @@ function rate_widget_form(&$form_state, $id = NULL) {
     $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
     $widget->teaser_display = FALSE;
     $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
+    $widget->roles = array();
+    $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
   }
 
   // Determine the template from GET (which is only available before the form
@@ -162,6 +164,8 @@ function rate_widget_form(&$form_state, $id = NULL) {
   isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
   isset($widget->teaser_display) or $widget->teaser_display = TRUE;
   isset($widget->comment_display) or $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
+  isset($widget->roles) or $widget->roles = array();
+  isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
 
   if (!isset($widget->template)) {
     $widget->template = 'custom';
@@ -257,7 +261,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
       '#type' => 'fieldset',
       '#title' => t('Options'),
       '#description' => t('Define the available voting buttons.'),
-      '#collapsible' => FALSE,
+      '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
 
@@ -343,7 +347,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#type' => 'fieldset',
     '#title' => t('Node types'),
     '#description' => t('Select the node types on which to enable this widget.'),
-    '#collapsible' => FALSE,
+    '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#theme' => 'rate_admin_types',
   );
@@ -370,7 +374,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#type' => 'fieldset',
     '#title' => t('Display settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
   );
 
   $options = array(
@@ -394,6 +398,39 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#title' => t('Comment display'),
     '#options' => $options,
     '#default_value' => $widget->comment_display,
+  );
+
+  $form['permissions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Permissions'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $sql = 'SELECT rid, name FROM {role} ORDER BY name ASC';
+  $res = db_query($sql);
+  $options = array();
+  while ($rec = db_fetch_array($res)) {
+    $options[$rec['rid']] = $rec['name'];
+  }
+  $form['permissions']['roles'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Roles'),
+    '#options' => $options,
+    '#default_value' => $widget->roles,
+    '#description' => t('Allow voting only for the selected role(s). If you select no roles, all users are allowed to vote.'),
+  );
+  $options = array(
+    RATE_NOPERM_REDIRECT_WITH_MESSAGE => t('Redirect to login and show message'),
+    RATE_NOPERM_REDIRECT_WITHOUT_MESSAGE => t('Redirect to login but do not show a message'),
+    RATE_NOPERM_SHOW_DISABLED_WIDGET => t('Show a disabled widget (with non clickable buttons)'),
+    RATE_NOPERM_HIDE_WIDGET => t('Hide widget'),
+  );
+  $form['permissions']['noperm_behaviour'] = array(
+    '#type' => 'radios',
+    '#title' => t('Behaviour when user has no permission to vote'),
+    '#options' => $options,
+    '#default_value' => $widget->noperm_behaviour,
+    '#description' => t('Choose an action what will happen if a user clicks on the widget but doesn\'t have the permission to vote.'),
   );
 
   $form['submit'] = array(
@@ -468,6 +505,8 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->node_display = $form_state['values']['node_display'];
   $widget->teaser_display = (bool) $form_state['values']['teaser_display'];
   $widget->comment_display = $form_state['values']['comment_display'];
+  $widget->roles = $form_state['values']['roles'];
+  $widget->noperm_behaviour = $form_state['values']['noperm_behaviour'];
   
   if ($widget->template != 'custom') {
     // Take over the values from the template.

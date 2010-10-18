@@ -16,9 +16,16 @@ Drupal.behaviors.rate = function(context) {
     widget_mode = ids[4];
 
     // Request new widget HTML.
-    $.get(Drupal.settings.basePath + 'rate/vote/js?widget_id=' + widget_id + '&content_type=' + content_type + '&content_id=' + content_id + '&widget_mode=' + widget_mode + '&token=' + token, function(data) {
-      $('#' + widget).html(data);
-      Drupal.behaviors.rate($('#' + widget));
+    $.get(Drupal.settings.basePath + 'rate/vote/js?widget_id=' + widget_id + '&content_type=' + content_type + '&content_id=' + content_id + '&widget_mode=' + widget_mode + '&token=' + token + '&destination=' + escape(document.location), function(data) {
+      if (data.match(/^https?\:\/\/[^\/]+\/(.*)$/)) {
+        // We got a redirect.
+        document.location = data;
+      }
+      else {
+        // Replace widget by new HTML code.
+        $('#' + widget).html(data);
+        Drupal.behaviors.rate($('#' + widget));
+      }
     });
 
     return false;
