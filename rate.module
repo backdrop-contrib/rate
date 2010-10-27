@@ -524,7 +524,7 @@ function rate_vote_ahah() {
     }
   }
 
-  print rate_generate_widget($widget_id, $content_type, $content_id, $widget_mode, FALSE);
+  print rate_generate_widget($widget_id, $content_type, $content_id, $widget_mode);
 
   module_invoke_all('exit') & exit;
 }
