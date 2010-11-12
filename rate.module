@@ -345,7 +345,7 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     elseif ($result['function'] == 'count') {
       $output['count'] = $result['value'];
     }
-    elseif (preg_match('/^option\\-([0-9]+)$/', $result['function'], $match)) {
+    elseif (preg_match('/^option\\-([\\-0-9]+)$/', $result['function'], $match)) {
       $output['options'][$match[1]] = $result['value'];
       $output['count'] += $result['value'];
     }
