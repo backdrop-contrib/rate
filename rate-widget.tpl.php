@@ -9,8 +9,10 @@
  * file for information on theming widgets.
  */
 
+$num = 0;
 foreach ($links as $link) {
-  print theme('rate_button', $link['text'], $link['href']);
+  ++$num;
+  print theme('rate_button', $link['text'], $link['href'], "rate-button-$num");
 }
 
 print t('Total votes: !count', array('!count' => $results['count'])); ?>
