@@ -232,7 +232,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     );
   }
 
-  if ($widget->css) {
+  if (isset($widget->css)) {
     drupal_add_css($widget->css);
   }
 
