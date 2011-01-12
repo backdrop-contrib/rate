@@ -1,7 +1,7 @@
 <?php
 // $Id$
 
-/**\
+/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Add configuration options to the widget form.
@@ -12,7 +12,7 @@ function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
     return;
   }
 
-  if ($form['#widget_id']) {
+  if (!empty($form['#widget_id'])) {
     $widgets = variable_get(RATE_VAR_WIDGETS, array());
     $widget = $widgets[$form['#widget_id']];
   }
@@ -26,7 +26,7 @@ function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-
+  
   $options = array(-1 => t('Never')) + drupal_map_assoc(array(300, 900, 1800, 3600, 10800, 21600, 32400, 43200, 86400, 172800, 345600, 604800, 1209600, 1814400, 2419200), 'format_interval');
   $form['expiration']['expiration'] = array(
     '#type' => 'select',
@@ -45,40 +45,45 @@ function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
 }
 
 /**
- * Implements hook_rate_widget().
+ * Implements hook_rate_widget_insert().
  */
-function rate_expiration_rate_widget($op, &$widget, $values = NULL) {
-  switch ($op) {
-    case 'insert':
-    case 'update':
-      $widget->expiration = $values['expiration'];
-      $widget->expiration_allow_override = !empty($values['expiration_allow_override']);
-      break;
-    case 'delete':
-      $sql = 'DELETE FROM {rate_expiration} WHERE widget_name = \'%s\'';
-      db_query($sql, $widget->name);
-      break;
-    case 'view':
-      if ($values['content_type'] == 'node') {
-        if ($node = node_load($values['content_id'])) {
-          $configuration = _rate_expiration_get_node_values($node->nid);
-          if (isset($configuration[$widget->name])) {
-            $start = $configuration[$widget->name]['start'];
-            $end = $configuration[$widget->name]['end'];
-          }
-          else {
-            $start = 0;
-            $end = 0;
-          }
-          if ($widget->expiration > 0) {
-            !empty($end) or $end = $node->created + $widget->expiration;
-          }
-          if (($end > 0 && $end <= time()) || ($start > 0 && $start > time())) {
-            $widget->mode = RATE_CLOSED;
-          }
-        }
+function rate_expiration_rate_widget_insert(&$widget, $values) {
+  $widget->expiration = $values['expiration'];
+  $widget->expiration_allow_override = !empty($values['expiration_allow_override']);
+}
+
+/**
+ * Implements hook_rate_widget_update().
+ */
+function rate_expiration_rate_widget_update(&$widget, $values) {
+  $widget->expiration = $values['expiration'];
+  $widget->expiration_allow_override = !empty($values['expiration_allow_override']);
+}
+
+/**
+ * Implements hook_rate_widget_alter().
+ */
+function rate_expiration_rate_widget_alter(&$widget, $context) {
+  extract($context); // Introduces $content_type and $content_id
+  if ($content_type == 'node') {
+    if ($node = node_load($content_id)) {
+      $configuration = _rate_expiration_get_node_values($node->nid);
+      if (isset($configuration[$widget->name])) {
+        $start = $configuration[$widget->name]->start;
+        $end = $configuration[$widget->name]->end;
       }
-      break;
+      else {
+        $start = 0;
+        $end = 0;
+      }
+      isset($widget->expiration) or $widget->expiration = 0;
+      if ($widget->expiration > 0) {
+        !empty($end) or $end = $node->created + $widget->expiration;
+      }
+      if (($end > 0 && $end <= REQUEST_TIME) || ($start > 0 && $start > REQUEST_TIME)) {
+        $widget->mode = RATE_CLOSED;
+      }
+    }
   }
 }
 
@@ -90,14 +95,14 @@ function _rate_expiration_get_node_values($nid) {
   if (isset($cache[$nid])) {
     return $cache[$nid];
   }
-  
+
   $output = array();
   $sql = 'SELECT re.widget_name, re.start, re.end
   FROM {rate_expiration} re
-  WHERE nid = %d';
-  $res = db_query($sql, $nid);
-  while ($rec = db_fetch_array($res)) {
-    $output[$rec['widget_name']] = $rec;
+  WHERE nid = :nid';
+  $result = db_query($sql, array(':nid' => $nid));
+  foreach ($result as $record) {
+    $output[$record->widget_name] = $record;
   }
 
   $cache[$nid] = $output;
@@ -125,14 +130,14 @@ function rate_expiration_form_alter(&$form, &$form_state, $form_id) {
 
   // Get default values for all widgets.
   $defaults = empty($node->nid) ? array() : _rate_expiration_get_node_values($node->nid);
-  
+
   foreach ($widgets as $widget) {
     if (isset($defaults[$widget->name])) {
-      $startdate = $defaults[$widget->name]['start'];
-      $enddate = $defaults[$widget->name]['end'];
+      $startdate = $defaults[$widget->name]->start;
+      $enddate = $defaults[$widget->name]->end;
     }
     else {
-      $startdate = empty($node->created) ? time() : $node->created;
+      $startdate = empty($node->created) ? REQUEST_TIME : $node->created;
       $enddate = NULL;
       // Decrement startdate to prevent voting from being disabled a few minutes after node
       // creation (may happen cause the date increment of 5 minutes).
@@ -149,7 +154,7 @@ function rate_expiration_form_alter(&$form, &$form_state, $form_id) {
 
     $form[$container]["{$container}_begin"] = array(
       '#type' => 'date_select',
-      '#title' => t('Enable voting on'),
+      '#title' => t('Enable voting'),
       '#description' => t('Leave empty to disable startdate.'),
       '#default_value' => $startdate ? format_date($startdate, 'custom', 'Y-m-d H:i:s') : NULL,
       '#date_increment' => 5,
@@ -168,49 +173,107 @@ function rate_expiration_form_alter(&$form, &$form_state, $form_id) {
  * Array_filter() callback. Filter widgets without the allow_override option.
  */
 function _rate_expiration_filter_widgets($item) {
-  return isset($item->expiration_allow_override);
+  return !empty($item->expiration_allow_override);
 }
 
 /**
- * Implements hook_nodeapi().
+ * Implements hook_node_insert().
  */
-function rate_expiration_nodeapi(&$node, $op, $teaser, $page) {
+function rate_expiration_node_insert($node) {
   global $user;
-  switch ($op) {
-    case 'insert':
-    case 'update':
-      // Get active rate widgets and filter widgets without the "allow override" option..
-      $widgets = rate_get_active_widgets('node', $node->type);
-      $widgets = array_filter($widgets, '_rate_expiration_filter_widgets');
-      foreach ($widgets as $widget) {
-        $timezone = is_null($user->timezone) ? variable_get('date_default_timezone', 0) : $user->timezone;
-        $container = 'rate_expiration_' . $widget->name;
-        $begin = "{$container}_begin";
-        $end = "{$container}_end";
-        $begin = $node->$begin ? strtotime($node->$begin.'Z') - $timezone : NULL;
-        $end = $node->$end ? strtotime($node->$end.'Z') - $timezone : NULL;
-        if (empty($begin) && empty($end)) {
-          $sql = 'DELETE FROM {rate_expiration} WHERE nid = %d';
-          db_query($sql, $node->nid);
-        }
-        else {
-          $sql = 'UPDATE {rate_expiration}
-          SET start = %d, end = %d
-          WHERE nid = %d';
-          db_query($sql, $begin, $end, $node->nid);
-          if (!db_affected_rows()) {
-            $sql = 'INSERT INTO {rate_expiration}
-            (nid, widget_name, start, end)
-            VALUES
-            (%d, \'%s\', %d, %d)';
-            db_query($sql, $node->nid, $widget->name, $begin, $end);
-          }
-        }
-      }
-      break;
-    case 'delete':
-      $sql = 'DELETE FROM {rate_expiration} WHERE nid = %d';
-      db_query($sql, $node->nid);
-      break;
+
+  $timezone = is_null($user->timezone) ? variable_get('date_default_timezone', 0) : $user->timezone;
+  if (!is_numeric($timezone)) {
+    // Convert textual timezone to numeric offset.
+    $timezone = new DateTimeZone($timezone);
+    $timezone = $timezone->getOffset(new DateTime('now', $timezone));
   }
+
+  // Get active rate widgets and filter widgets without the "allow override" option..
+  $widgets = rate_get_active_widgets('node', $node->type);
+  $widgets = array_filter($widgets, '_rate_expiration_filter_widgets');
+  foreach ($widgets as $widget) {
+    $timezone = is_null($user->timezone) ? variable_get('date_default_timezone', 0) : $user->timezone;
+    $container = 'rate_expiration_' . $widget->name;
+    $begin = "{$container}_begin";
+    $end = "{$container}_end";
+    $begin = $node->$begin ? (int) strtotime($node->$begin . 'Z') - $timezone : 0;
+    $end = $node->$end ? (int) strtotime($node->$end . 'Z') - $timezone : 0;
+
+    // Correct empty dates which are not 0 cause of timezone handling.
+    $begin = $begin <= 86400 ? 0 : $begin;
+    $end = $end <= 86400 ? 0 : $end;
+
+    if (!empty($begin) || !empty($end)) {
+      db_insert('rate_expiration')
+        ->fields(array('nid' => $node->nid, 'widget_name' => $widget->name, 'start' => $begin, 'end' => $end))
+        ->execute();
+    }
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function rate_expiration_node_update($node) {
+  global $user;
+
+  $timezone = is_null($user->timezone) ? variable_get('date_default_timezone', 0) : $user->timezone;
+  if (!is_numeric($timezone)) {
+    // Convert textual timezone to numeric offset.
+    $timezone = new DateTimeZone($timezone);
+    $timezone = $timezone->getOffset(new DateTime('now', $timezone));
+  }
+
+  // Get active rate widgets and filter widgets without the "allow override" option..
+  $widgets = rate_get_active_widgets('node', $node->type);
+  $widgets = array_filter($widgets, '_rate_expiration_filter_widgets');
+  foreach ($widgets as $widget) {
+    $container = 'rate_expiration_' . $widget->name;
+    $begin = "{$container}_begin";
+    $end = "{$container}_end";
+    $begin = $node->$begin ? (int) strtotime($node->$begin . 'Z') - $timezone : 0;
+    $end = $node->$end ? (int) strtotime($node->$end . 'Z') - $timezone : 0;
+
+    // Correct empty dates which are not 0 cause of timezone handling.
+    $begin = $begin <= 86400 ? 0 : $begin;
+    $end = $end <= 86400 ? 0 : $end;
+
+    if (empty($begin) && empty($end)) {
+      db_delete('rate_expiration')
+        ->condition('nid', $node->nid)
+        ->condition('widget_name', $widget->name)
+        ->execute();
+    }
+    else {
+      $exists = db_select('rate_expiration', 're')
+        ->fields('re', array('start', 'end'))
+        ->condition('re.nid', $node->nid)
+        ->condition('re.widget_name', $widget->name)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      if ($exists) {
+        db_update('rate_expiration')
+          ->fields(array('start' => $begin, 'end' => $end))
+          ->condition('nid', $node->nid)
+          ->condition('widget_name', $widget->name)
+          ->execute();
+      }
+      else {
+        db_insert('rate_expiration')
+          ->fields(array('nid' => $node->nid, 'widget_name' => $widget->name, 'start' => $begin, 'end' => $end))
+          ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function rate_expiration_node_delete($node) {
+  db_delete('rate_expiration')
+    ->condition('nid', $node->nid)
+    ->execute();
 }

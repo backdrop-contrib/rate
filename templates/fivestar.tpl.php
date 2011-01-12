@@ -1,4 +1,6 @@
 <?php
+// $Id$
+
 /**
  * @file
  * Rate widget theme
@@ -11,7 +13,7 @@ for ($i = 0; $i < 5; $i++) {
   else {
     $class = 'rate-fivestar-btn-empty';
   }
-  print theme('rate_button', $links[$i]['text'], $links[$i]['href'], $class);
+  print theme('rate_button', array('text' => $links[$i]['text'], 'href' => $links[$i]['href'], 'class' => $class));
 }
 
 if ($mode == RATE_FULL || $mode == RATE_CLOSED) {

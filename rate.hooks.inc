@@ -1,4 +1,10 @@
 <?php
+// $Id$
+
+/**
+ * @file
+ * Defines module hooks.
+ */
 
 /**
  * Define templates for rate widgets.

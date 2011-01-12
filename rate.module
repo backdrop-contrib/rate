@@ -1,11 +1,11 @@
 <?php
+
 // $Id$
 
 /**
  * @file
  * Rate module
  */
-
 // Define display modes for the rate widget.
 define('RATE_FULL', 1);
 define('RATE_COMPACT', 2);
@@ -24,13 +24,12 @@ define('RATE_NOPERM_SHOW_DISABLED_WIDGET', 3);
 define('RATE_NOPERM_HIDE_WIDGET', 4);
 
 // Define constants for paths.
-define('RATE_PATH_ADMIN_PAGE', 'admin/build/rate');
-define('RATE_PATH_ADMIN_PAGE_LIST', 'admin/build/rate/list');
-define('RATE_PATH_ADMIN_PAGE_ADD', 'admin/build/rate/add');
-define('RATE_PATH_ADMIN_PAGE_EDIT', 'admin/build/rate/%/edit');
-define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/build/rate/%/delete');
-define('RATE_PATH_ADMIN_PAGE_TEMPLATE', 'admin/build/rate/%/template');
-define('RATE_PATH_ADMIN_AHAH', 'rate/options/js');
+define('RATE_PATH_ADMIN_PAGE', 'admin/structure/rate');
+define('RATE_PATH_ADMIN_PAGE_LIST', 'admin/structure/rate/list');
+define('RATE_PATH_ADMIN_PAGE_ADD', 'admin/structure/rate/add');
+define('RATE_PATH_ADMIN_PAGE_EDIT', 'admin/structure/rate/%/edit');
+define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/structure/rate/%/delete');
+define('RATE_PATH_ADMIN_PAGE_TEMPLATE', 'admin/structure/rate/%/template');
 define('RATE_PATH_AHAH', 'rate/vote/js');
 define('RATE_PATH_RESULTS_PAGE', 'node/%node/results');
 
@@ -40,19 +39,28 @@ define('RATE_VAR_WIDGETS', 'rate_widgets');
 /**
  * Implements hook_perm().
  */
-function rate_perm() {
-  return array('administer rate', 'view rate results page');
+function rate_permission() {
+  return array(
+    'administer rate' => array(
+      'title' => t('Administer rate module'),
+      'description' => t('Perform Administration tasks for rate module.'),
+    ),
+    'view rate results page' => array(
+      'title' => t('View rate results page'),
+      'description' => t('View rate results page'),
+    ),
+  );
 }
 
 /**
  * Implements hook_menu().
  */
 function rate_menu() {
-	$menu = array();
+  $menu = array();
 
   $menu[RATE_PATH_ADMIN_PAGE] = array(
-    'title' => t('Rate widgets'),
-    'description' => t('Manage rating widgets.'),
+    'title' => 'Rate widgets',
+    'description' => 'Manage rating widgets.',
     'page callback' => 'rate_admin_page',
     'access arguments' => array('administer rate'),
     'type' => MENU_NORMAL_ITEM,
@@ -60,7 +68,7 @@ function rate_menu() {
   );
 
   $menu[RATE_PATH_ADMIN_PAGE_LIST] = array(
-    'title' => t('List'),
+    'title' => 'List',
     'page callback' => 'rate_admin_page',
     'access arguments' => array('administer rate'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -69,17 +77,17 @@ function rate_menu() {
   );
 
   $menu[RATE_PATH_ADMIN_PAGE_ADD] = array(
-    'title' => t('Add widget'),
+    'title' => 'Add widget',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_form'),
     'access arguments' => array('administer rate'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
-    'weight' => 1,
+  'weight' => 1,
   );
 
   $menu[RATE_PATH_ADMIN_PAGE_EDIT] = array(
-    'title' => t('Edit widget'),
+    'title' => 'Edit widget',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_form', 3),
     'access arguments' => array('administer rate'),
@@ -88,7 +96,7 @@ function rate_menu() {
   );
 
   $menu[RATE_PATH_ADMIN_PAGE_DELETE] = array(
-    'title' => t('Delete widget'),
+    'title' => 'Delete widget',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_delete_form', 3),
     'access arguments' => array('administer rate'),
@@ -97,7 +105,7 @@ function rate_menu() {
   );
 
   $menu[RATE_PATH_ADMIN_PAGE_TEMPLATE] = array(
-    'title' => t('Switch template'),
+    'title' => 'Switch template',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_choose_template_form', 3),
     'access arguments' => array('administer rate'),
@@ -105,21 +113,14 @@ function rate_menu() {
     'file' => 'rate.admin.inc',
   );
 
-	$menu[RATE_PATH_ADMIN_AHAH] = array(
-		'page callback' => 'rate_widget_form_ahah',
-		'access arguments' => array('administer rate'),
-		'type' => MENU_CALLBACK,
-    'file' => 'rate.admin.inc',
-	);
-
-	$menu[RATE_PATH_AHAH] = array(
-		'page callback' => 'rate_vote_ahah',
-		'access arguments' => array('access content'),
-		'type' => MENU_CALLBACK
-	);
+  $menu[RATE_PATH_AHAH] = array(
+    'page callback' => 'rate_vote_ahah',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK
+  );
 
   $menu[RATE_PATH_RESULTS_PAGE] = array(
-    'title' => t('Voting results'),
+    'title' => 'Voting results',
     'page callback' => 'rate_results_page',
     'page arguments' => array(1),
     'access callback' => 'rate_results_page_access',
@@ -129,7 +130,7 @@ function rate_menu() {
     'file' => 'rate.results.inc',
   );
 
-	return $menu;
+  return $menu;
 }
 
 /**
@@ -139,13 +140,13 @@ function rate_menu() {
  * @param string $type "node" or "comment"
  * @return array
  */
-function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
+function rate_get_active_widgets($content_type, $type, $view_mode = 'full') {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $active = array();
   foreach ($widgets as $widget_id => $widget) {
     if ($content_type == 'node' && in_array($type, $widget->node_types)) {
       isset($widget->teaser_display) or $widget->teaser_display = TRUE;
-      if (!$teaser || $widget->teaser_display) {
+      if ($view_mode == 'full' || $widget->teaser_display) {
         $active[$widget_id] = $widget;
       }
     }
@@ -158,7 +159,7 @@ function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
 
 /**
  * Generate a widget.
- * 
+ *
  * @param int $widget_id Widget id
  * @param string $content_type "node" or "comment"
  * @param int $content_id Node id (nid) or comment id (cid)
@@ -174,7 +175,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
 
   // Determine if the user may vote.
   $allow_voting = _rate_check_permissions($widget);
-
+  
   // This option should be available, check for legacy.
   isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
 
@@ -189,10 +190,11 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   $widget->mode = $mode;
 
   // Let other modules alter the rate widget.
-  foreach (module_implements('rate_widget') as $module) {
-    $hook = "{$module}_rate_widget";
-    $hook('view', $widget, array('content_type' => $content_type, 'content_id' => $content_id, 'teaser' => $teaser));
-  }
+  $context = array(
+    'content_type' => $content_type,
+    'content_id' => $content_id,
+  );
+  drupal_alter('rate_widget', $widget, $context);
 
   $div_id = "rate-$content_type-$content_id-$widget_id-$mode";
   $theme_name = str_replace('-', '_', $widget->name);
@@ -205,20 +207,20 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   $results = rate_get_results($content_type, $content_id, $widget_id);
 
   drupal_add_js(drupal_get_path('module', 'rate') . '/rate.js');
-
+  
   $links = array();
   foreach ($widget->options as $option) {
     // This name must be unique for all submit buttons across the page.
     $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
-    $token = drupal_get_token($id);
+    $token = rate_get_token($id);
     if (isset($_GET['rate']) && $_GET['rate'] == $token) {
       rate_save_vote($widget, $content_type, $content_id, $option[0]);
-      drupal_goto($_GET['q'], _rate_get_query());
+      drupal_goto($_GET['q'], array('query' => _rate_get_query()));
     }
     isset($widget->translate) or $widget->translate = TRUE;
     $link_text = $widget->translate ? t($option[1]) : $option[1];
     $link_href = url($_GET['q'], array('query' => _rate_get_query($token)));
-    if (isset($results['options'])) {
+    if (isset($results['options']) && isset($results['options'][$option[0]])) {
       $link_votes = $results['options'][$option[0]];
     }
     else {
@@ -243,7 +245,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     $widget->mode = $mode;
   }
 
-  $widget_html = theme($theme, $links, $results, $widget->mode);
+  $widget_html = theme($theme, array('links' => $links, 'results' => $results, 'mode' => $widget->mode));
   if ($include_div) {
     return
       '<div class="rate-widget rate-widget-' . $widget_id . '" id="' . $div_id . '">' .
@@ -273,7 +275,7 @@ function _rate_get_query($token = NULL) {
   if ($token) {
     $args['rate'] = $token;
   }
-  return http_build_query($args, NULL, '&');
+  return $args;
 }
 
 /**
@@ -315,15 +317,18 @@ function _rate_check_permissions($widget) {
  */
 function rate_get_results($content_type, $content_id, $widget_id) {
   global $user;
-  
+
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
   $criteria = array(
-    'content_type' => $content_type,
-    'content_id' => $content_id,
+    'entity_type' => $content_type,
+    'entity_id' => $content_id,
     'tag' => $widget->tag,
+    'value_type' => $widget->value_type,
   );
+
   $results = votingapi_select_results($criteria);
+
   $output = array('count' => 0);
   if ($widget->value_type != 'option') {
     // Set a default. Does not apply to options.
@@ -359,7 +364,8 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     if ($output['count'] == 0) {
       // If no one voted its 50-50
       $output['up_percent'] = 50;
-    } else {
+    }
+    else {
       $output['up_percent'] = (int) (($output['up'] * 100) / $output['count']);
     }
     $output['down_percent'] = 100 - $output['up_percent'];
@@ -372,7 +378,7 @@ function rate_get_results($content_type, $content_id, $widget_id) {
   if ($user_vote = votingapi_select_votes($criteria)) {
     // Check the anonymous window. We should not display this vote when its anonymous and casted too long ago.
     $anonymous_window = variable_get('votingapi_anonymous_window', 86400);
-    if ($user->uid || $user_vote[0]['timestamp'] > time() - $anonymous_window || $anonymous_window == -1) {
+    if ($user->uid || $user_vote[0]['timestamp'] > REQUEST_TIME - $anonymous_window || $anonymous_window == -1) {
       $output['user_vote'] = $user_vote[0]['value'];
       if ($widget->value_type == 'option') {
         foreach ($widget->options as $option) {
@@ -383,7 +389,7 @@ function rate_get_results($content_type, $content_id, $widget_id) {
       }
     }
   }
-  
+
   return $output;
 }
 
@@ -400,7 +406,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   // content id's, but it's only possible to save a single vote per request for now.
   static $saved = FALSE;
   if ($saved) {
-    return;
+      return;
   }
   $saved = TRUE;
 
@@ -414,6 +420,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     switch ($widget->noperm_behaviour) {
       case RATE_NOPERM_REDIRECT_WITH_MESSAGE:
         drupal_set_message(t('You must login before you can vote.'));
+      
         // Redirects via AHAH have a destination param to prevent redirecting to the AJAX callback.
         $destination = isset($_GET['destination']) ? $_GET['destination'] : $_GET['q'];
         // Strip off protocol domain name to prevent long query strings in URL.
@@ -424,7 +431,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
           module_invoke_all('exit') & exit;
         }
         else {
-          drupal_goto('user', http_build_query($query, NULL, '&'));
+          drupal_goto('user', array('query' => $query));
         }
         break;
       case RATE_NOPERM_REDIRECT_WITHOUT_MESSAGE:
@@ -434,7 +441,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
           module_invoke_all('exit') & exit;
         }
         else {
-          drupal_goto('user', http_build_query($query, NULL, '&'));
+          drupal_goto('user', array('query' => $query));
         }
         break;
       default:
@@ -443,8 +450,8 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   }
 
   $votes = array(
-    'content_type' => $content_type,
-    'content_id' => $content_id,
+    'entity_type' => $content_type,
+    'entity_id' => $content_id,
     'value_type' => $widget->value_type,
     'value' => $value,
     'tag' => $widget->tag,
@@ -453,53 +460,46 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
 }
 
 /**
- * Implements hook_nodeapi().
+ * Implements hook_node_view().
  */
-function rate_nodeapi(&$node, $op, $a3, $a4) {
-	// Adding the form to the node view
-	if ($op == 'view') {
-    $widgets = rate_get_active_widgets('node', $node->type, $a3);
-    foreach ($widgets as $widget_id => $widget) {
-      $widget_name = 'rate_' . $widget->name;
-      isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
-      $widget_code = array(
-        '#value' => rate_generate_widget($widget_id, 'node', $node->nid),
-        '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? 0 : 50,
-      );
-      if ($widget->node_display == RATE_DISPLAY_DISABLE) {
-        $node->$widget_name = $widget_code;
-      }
-      else {
-        $node->content[$widget_name] = $widget_code;
-      }
+function rate_node_view(&$node, $view_mode, $langcode) {
+  // Adding the form to the node view
+  $widgets = rate_get_active_widgets('node', $node->type, $view_mode);
+  foreach ($widgets as $widget_id => $widget) {
+    $widget_name = 'rate_' . $widget->name;
+    isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+    $widget_code = array(
+      '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? -50 : 50,
+      '#markup' => rate_generate_widget($widget_id, 'node', $node->nid),
+    );
+    if ($widget->node_display == RATE_DISPLAY_DISABLE) {
+      $node->content['#' . $widget_name] = $widget_code;
     }
-	}
+    else {
+      $node->content[$widget_name] = $widget_code;
+    }
+  }
 }
 
 /**
- * Implements hook_comment().
+ * Implements hook_comment_view_alter().
  */
-function rate_comment(&$comment, $op) {
-	// Adding the form to the node view
-	if ($op == 'view') {
-    $node = node_load($comment->nid);
-    $widgets = rate_get_active_widgets('comment', $node->type);
-    foreach ($widgets as $widget_id => $widget) {
-      $widget_name = 'rate_' . $widget->name;
-      $widget_code = rate_generate_widget($widget_id, 'comment', $comment->cid);
-      switch ($widget->comment_display) {
-        case RATE_DISPLAY_ABOVE_CONTENT:
-          $comment->comment = $widget_code . $comment->comment;
-          break;
-        case RATE_DISPLAY_BELOW_CONTENT:
-          $comment->comment = $comment->comment . $widget_code;
-          break;
-        case RATE_DISPLAY_DISABLE:
-          $comment->$widget_name = $widget_code;
-          break;
-      }
+function rate_comment_view_alter(&$comment) {
+  $node = $comment['#node'];
+  $widgets = rate_get_active_widgets('comment', $node->type);
+  foreach ($widgets as $widget_id => $widget) {
+    $widget_name = 'rate_' . $widget->name;
+    $widget_code = array(
+      '#weight' => $widget->comment_display == RATE_DISPLAY_ABOVE_CONTENT ? -50 : 50,
+      '#markup' => rate_generate_widget($widget_id, 'comment', $comment['#comment']->cid),
+    );
+    if ($widget->comment_display == RATE_DISPLAY_DISABLE) {
+      $comment['#' . $widget_name] = $widget_code;
     }
-	}
+    else {
+      $comment[$widget_name] = $widget_code;
+    }
+  }
 }
 
 /**
@@ -518,7 +518,7 @@ function rate_vote_ahah() {
   foreach ($widget->options as $option) {
     // This name must be unique for all submit buttons across the page, AHAH will fail otherwise.
     $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
-    $token = drupal_get_token($id);
+    $token = rate_get_token($id);
     if (isset($_GET['token']) && $_GET['token'] == $token) {
       rate_save_vote($widget, $content_type, $content_id, $option[0], TRUE);
     }
@@ -588,7 +588,7 @@ function rate_rate_templates() {
   $templates['fivestar']->customizable = FALSE;
   $templates['fivestar']->translate = FALSE;
   $templates['fivestar']->template_title = t('Fivestar');
-  
+
   $templates['emotion'] = new stdClass();
   $templates['emotion']->value_type = 'option';
   $templates['emotion']->options = array(
@@ -664,10 +664,16 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
       $value_type = $votingapi_setting['value'];
     }
   }
-  
+
   $content_type = 'node';
   $content_id = $columns->nid;
-  $node_type = isset($columns->node_type) ? $columns->node_type : db_result(db_query('SELECT type FROM {node} WHERE nid = %d', $columns->nid));
+
+  if (isset($columns->node_type)) {
+    $node_type = $columns->node_type;
+  }
+  else {
+    $node_type = db_select('node', 'n')->fields('n', array('type'))->condition('nid', $columns->nid)->execute()->fetchField();
+  }
 
   // Loop through all the widgets and search for a suitable widget to display.
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
@@ -696,52 +702,54 @@ function rate_theme() {
   return array(
     'rate_widget' => array(
       'pattern' => 'rate_widget__',
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'rate-widget',
     ),
     'rate_button' => array(
       'pattern' => 'rate_button__',
-      'arguments' => array('text' => NULL, 'href' => NULL, 'class' => NULL),
+      'variables' => array('text' => NULL, 'href' => NULL, 'class' => NULL),
     ),
     'rate_admin_types' => array(
-      'arguments' => array('element' => NULL),
+      'render element' => 'element',
       'file' => 'rate.admin.inc',
     ),
     'rate_admin_options' => array(
-      'arguments' => array('element' => NULL),
+      'render element' => 'element',
       'file' => 'rate.admin.inc',
     ),
-
     // Templates for default widget types.
     'rate_template_thumbs_up' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'thumbs-up',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_thumbs_up_down' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'thumbs-up-down',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_fivestar' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'fivestar',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_emotion' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'emotion',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_yesno' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
       'template' => 'yesno',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
   );
 }
 
-function theme_rate_button($text, $href, $class = NULL) {
+function theme_rate_button($variables) {
+  $text = $variables['text'];
+  $href = $variables['href'];
+  $class = $variables['class'];
   static $id = 0;
   $id++;
 
@@ -751,15 +759,45 @@ function theme_rate_button($text, $href, $class = NULL) {
   }
   if (empty($href)) {
     // Widget is disabled or closed.
-    return
-      '<span class="' . $classes . '" id="rate-button-' . $id . '">' .
+    return '<span class="' . $classes . '" id="rate-button-' . $id . '">' .
       check_plain($text) .
       '</span>';
   }
   else {
-    return
-      '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '">' .
+    return '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '">' .
       check_plain($text) .
       '</a>';
   }
+}
+
+/**
+ * Check if a machine readable name is already in use.
+ *
+ * @param string $machine_name Machine readable name
+ * @return bool
+ */
+function rate_machine_name_exists($machine_name) {
+  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  $active = array();
+  foreach ($widgets as $widget_id => $widget) {
+    if ($widget->name == $machine_name) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Generate a rate token
+ *
+ * This function is very similar to drupal_get_token(). The reason not to use
+ * drupal_get_token() is that that function uses session_id(), which generates
+ * different session id's for each page request when not logged in.
+ *
+ * @param string $values
+ * @return string
+ */
+function rate_get_token($value = '') {
+  global $user;
+  return drupal_hmac_base64($value, $user->uid . drupal_get_private_key() . drupal_get_hash_salt());
 }

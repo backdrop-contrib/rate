@@ -29,9 +29,6 @@ Copy Rate into your modules directory (i.e. sites/all/modules) and enable Rate
 
 Optional modules:
 
-* Chart
-  To view the charts in the vote results tab, you also need to install the "chart"
-  module, which you can get at http://drupal.org/project/chart.
 * Date
   The date module is a requirement for the Rate Expiration module.
 
@@ -215,10 +212,6 @@ Voting results are available on the voting results page. You can get there by
 clicking the "Voting results" tab on the node page. Note that this tab is hidden
 if the node does not have any rate widgets or if you do not have the
 "view rate results" permission.
-
-When the chart module is enabled, you will find charts of the results in the
-last 30 days on this page. The chart may show less than 30 days if there was no
-activity on all days.
 
 The voting results page is only available for nodes.
 

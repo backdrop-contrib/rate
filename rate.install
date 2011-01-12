@@ -1,4 +1,10 @@
 <?php
+// $Id$
+
+/**
+ * @file
+ * Installation/Uninstallation functions for rate module.
+ */
 
 /**
  * Implements hook_uninstall().

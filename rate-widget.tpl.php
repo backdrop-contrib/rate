@@ -12,7 +12,7 @@
 $num = 0;
 foreach ($links as $link) {
   ++$num;
-  print theme('rate_button', $link['text'], $link['href'], "rate-button-$num");
+  print theme('rate_button', array('text' => $link['text'], 'href' => $link['href'], 'class' => "rate-button-$num"));
 }
 
 print t('Total votes: !count', array('!count' => $results['count'])); ?>

@@ -1,4 +1,5 @@
 <?php
+
 // $Id$
 
 /**
@@ -29,9 +30,10 @@ function rate_admin_page() {
 
   $output = '';
   $output .= '<h3>' . t('Add widget') . '</h3>';
-  $output .= drupal_get_form('rate_choose_template_form');
+  $add_form = drupal_get_form('rate_choose_template_form');
+  $output .= drupal_render($add_form);
   if ($rows) {
-    $output .= theme('table', $header, $rows);
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
   }
   else {
     $text = t('You do not have any rate widgets defined yet.');
@@ -57,9 +59,7 @@ function _rate_sort($a, $b) {
 /**
  * Form for choosing a template before the user goes to the add widget form.
  */
-function rate_choose_template_form(&$form_state, $id = NULL) {
-  $form = array();
-
+function rate_choose_template_form($form, &$form_state, $id = NULL) {
   if ($id) {
     $form['#widget_id'] = $id;
     $widgets = variable_get(RATE_VAR_WIDGETS, array());
@@ -97,7 +97,7 @@ function rate_choose_template_form(&$form_state, $id = NULL) {
  */
 function rate_choose_template_form_submit($form, &$form_state) {
   $template = $form_state['values']['template'];
-  $query = 'template=' . urlencode($template);
+  $query = array('template' => $template);
   if (isset($form['#widget_id'])) {
     /**
      * @todo: Copy over the options array from the template to the widget.
@@ -107,15 +107,13 @@ function rate_choose_template_form_submit($form, &$form_state) {
   else {
     $path = RATE_PATH_ADMIN_PAGE_ADD;
   }
-  drupal_goto($path, $query);
+  drupal_goto($path, array('query' => $query));
 }
 
 /**
  * Form for adding and editing widgets.
  */
-function rate_widget_form(&$form_state, $id = NULL) {
-  $form = array();
-
+function rate_widget_form($form, &$form_state, $id = NULL) {
   // Workaround core issue #591696 in AHAH forms.
   // See http://drupal.org/node/591696#comment-3369036 for details.
   if ($id) {
@@ -129,10 +127,11 @@ function rate_widget_form(&$form_state, $id = NULL) {
     $widgets = variable_get(RATE_VAR_WIDGETS, array());
     if (!isset($widgets[$id])) {
       drupal_not_found();
-      module_invoke_all('exit') & exit;
+      module_invoke_all('exit') && exit;
     }
     $widget = $widgets[$id];
-  } else {
+  }
+  else {
     $widget = new stdClass();
     $widget->name = '';
     $widget->tag = 'vote';
@@ -148,7 +147,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
     $widget->roles = array();
     $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
   }
-
+  
   // Determine the template from GET (which is only available before the form
   // was post) or from post values (only available after the form was posted).
   if (isset($form_state['post']['widget_template'])) {
@@ -173,7 +172,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
   elseif ($widget->template != 'custom') {
     if (!$template = _rate_get_template($widget->template)) {
       $form['error'] = array(
-        '#value' => t('You cannot edit this widget because it was built using the template %template which does not exists anymore.', array('%template' => $widget->template)),
+        '#markup' => t('You cannot edit this widget because it was built using the template %template which does not exists anymore.', array('%template' => $widget->template)),
       );
       return $form;
     }
@@ -195,10 +194,9 @@ function rate_widget_form(&$form_state, $id = NULL) {
   // so we need to add the template as a hidden value.
   $form['widget_template'] = array(
     '#type' => 'hidden',
-    '#value' => $widget->template,
+    '#default_value' => $widget->template,
   );
-  $form['#widget_customizable'] = $widget->customizable;
-
+  
   if ($id) {
     $link = l(t('change the widget type'), str_replace('%', $id, RATE_PATH_ADMIN_PAGE_TEMPLATE));
     if ($widget->template == 'custom') {
@@ -214,7 +212,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
       '#title' => t('Widget type'),
     );
     $form['template']['switch'] = array(
-      '#value' => $text,
+      '#markup' => $text,
     );
   }
 
@@ -225,14 +223,15 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#required' => TRUE,
   );
 
-  /**
-   * @todo Implement http://drupal.org/node/302054#comment-1110505
-   */
   $form['name'] = array(
-    '#type' => 'textfield',
+    '#type' => 'machine_name',
     '#title' => t('Machine readable name'),
     '#default_value' => $widget->name,
     '#required' => TRUE,
+    '#machine_name' => array(
+      'exists' => 'rate_machine_name_exists',
+      'source' => array('title'),
+    ),
   );
 
   $form['tag'] = array(
@@ -242,7 +241,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#description' => t('Tag used for VotingAPI. Widgets with the same tag share their voting results.'),
     '#required' => TRUE,
   );
-
+  
   if ($widget->customizable) {
     $options = array(
       'percent' => t('Percentage'),
@@ -273,20 +272,17 @@ function rate_widget_form(&$form_state, $id = NULL) {
 
     if ($form_state['submitted']) {
       $option_count = (int) $form_state['values']['option_count'];
-      if ($form_state['clicked_button']['#id'] == 'edit-add-another') {
+      if ($form_state['triggering_element']['#value'] == t('Add another option')) {
         ++$option_count;
       }
-    } else {
+    }
+    else {
       $option_count = max(2, count($widget->options));
     }
 
     $id = 0;
     $c = $option_count;
     for ($i = 0; $i < $c; $i++) {
-      if ($form_state['submitted'] && !empty($form_state['values']['delete' . $i])) {
-        --$option_count;
-        continue;
-      }
       $form['options']['options']['option' . $id] = array();
       if (isset($form_state['values']['value' . $i])) {
         $default_value = $form_state['values']['value' . $i];
@@ -322,17 +318,17 @@ function rate_widget_form(&$form_state, $id = NULL) {
 
     $form['options']['option_count'] = array(
       '#type' => 'hidden',
-      '#value' => $option_count,
+      '#default_value' => $option_count,
     );
 
     $form['options']['add_another'] = array(
       '#type' => 'submit',
       '#value' => t('Add another option'),
-      '#ahah' => array(
-        'path' => RATE_PATH_ADMIN_AHAH,
+      '#ajax' => array(
+        'callback' => 'rate_widget_form_ajax',
         'wrapper' => 'rate-options',
         'method' => 'replace',
-        'effect' => 'none',
+        'effect' => 'fade',
       ),
     );
 
@@ -351,22 +347,20 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#collapsed' => FALSE,
     '#theme' => 'rate_admin_types',
   );
-  $sql = 'SELECT type, name FROM {node_type} ORDER BY name ASC';
-  $res = db_query($sql);
-  while ($rec = db_fetch_array($res)) {
-    $form['types'][$rec['type']] = array(
+  foreach (node_type_get_names() as $type_name => $type_title) {
+    $form['types'][$type_name] = array(
       '#type' => 'fieldset',
-      '#title' => $rec['name'],
+      '#title' => check_plain($type_title),
     );
-    $form['types'][$rec['type']]['node_type_' . $rec['type']] = array(
+    $form['types'][$type_name]['node_type_' . $type_name] = array(
       '#type' => 'checkbox',
-      '#title' => $rec['name'],
-      '#default_value' => in_array($rec['type'], $widget->node_types),
+      '#title' => check_plain($type_title),
+      '#default_value' => in_array($type_name, $widget->node_types),
     );
-    $form['types'][$rec['type']]['comment_type_' . $rec['type']] = array(
+    $form['types'][$type_name]['comment_type_' . $type_name] = array(
       '#type' => 'checkbox',
-      '#title' => $rec['name'],
-      '#default_value' => in_array($rec['type'], $widget->comment_types),
+      '#title' => check_plain($type_title),
+      '#default_value' => in_array($type_name, $widget->comment_types),
     );
   }
 
@@ -406,11 +400,13 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $sql = 'SELECT rid, name FROM {role} ORDER BY name ASC';
-  $res = db_query($sql);
+  $res = db_select('role', 'r')
+    ->fields('r', array('rid', 'name'))
+    ->orderBy('name', 'asc')
+    ->execute();
   $options = array();
-  while ($rec = db_fetch_array($res)) {
-    $options[$rec['rid']] = $rec['name'];
+  foreach ($res as $rec) {
+    $options[$rec->rid] = $rec->name;
   }
   $form['permissions']['roles'] = array(
     '#type' => 'checkboxes',
@@ -438,7 +434,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#value' => t('Save'),
     '#weight' => 50,
   );
-  
+
   return $form;
 }
 
@@ -455,8 +451,15 @@ function rate_widget_form_validate($form, &$form_state) {
   if (!preg_match('/^[a-z\\_0-9]+$/i', $form_state['values']['tag'])) {
     form_set_error('tag', t('The vote tag may only contain alphanumeric characters and underscores.'));
   }
+  
+  $customizable = TRUE;
+  if ($form_state['values']['widget_template'] != 'custom') {
+    if ($template = _rate_get_template($form_state['values']['widget_template'])) {
+      $customizable = isset($template->customizable) ? $template->customizable : TRUE;
+    }
+  }
 
-  if ($form['#widget_customizable']) {
+  if ($customizable) {
     // Validate option values
     $used_values = array();
     foreach ($form_state['values'] as $name => $value) {
@@ -489,15 +492,15 @@ function rate_widget_form_validate($form, &$form_state) {
  * Form submit handler.
  */
 function rate_widget_form_submit($form, &$form_state) {
-  if ($form_state['clicked_button']['#id'] == 'edit-add-another') {
+  if ($form_state['triggering_element']['#value'] == t('Add another option')) {
     $form_state['rebuild'] = TRUE;
     return $form_state['values'];
   }
-  
+
   $widget = new stdClass();
   $widget->name = $form_state['values']['name'];
-  $widget->tag = $form_state['values']['tag'];
-  $widget->title = $form_state['values']['title'];
+  $widget->tag = filter_xss($form_state['values']['tag']);
+  $widget->title = filter_xss($form_state['values']['title']);
   $widget->node_types = array();
   $widget->comment_types = array();
   $widget->options = array();
@@ -507,7 +510,7 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->comment_display = $form_state['values']['comment_display'];
   $widget->roles = $form_state['values']['roles'];
   $widget->noperm_behaviour = $form_state['values']['noperm_behaviour'];
-  
+
   if ($widget->template != 'custom') {
     // Take over the values from the template.
     $template = _rate_get_template($widget->template);
@@ -529,9 +532,13 @@ function rate_widget_form_submit($form, &$form_state) {
 
   foreach ($form_state['values'] as $name => $value) {
     if (preg_match('/^value([0-9]+)$/', $name, $match) && preg_match('/^\\-?[0-9]+$/', $value)) {
+      if (!empty($form_state['values']['delete' . $match[1]])) {
+        // The delete option is checked.
+        continue;
+      }
       $widget->options[] = array(
         $value,
-        $form_state['values']['label' . $match[1]],
+        filter_xss($form_state['values']['label' . $match[1]]),
       );
     }
     if (preg_match('/^node_type_(.+)$/', $name, $match) && $value) {
@@ -543,11 +550,8 @@ function rate_widget_form_submit($form, &$form_state) {
   }
 
   // Let other modules alter the rate widget.
-  foreach (module_implements('rate_widget') as $module) {
-    $hook = "{$module}_rate_widget";
-    $op = empty($form['#widget_id']) ? 'insert' : 'update';
-    $hook($op, $widget, $form_state['values']);
-  }
+  $hook = 'rate_widget' . empty($form['#widget_id']) ? 'insert' : 'update';
+  drupal_alter($hook, $widget, $form_state['values']);
 
   // Save the widget.
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
@@ -570,26 +574,8 @@ function rate_widget_form_submit($form, &$form_state) {
 /**
  * AHAH callback for widget form.
  */
-function rate_widget_form_ahah() {
-  $form_state = array('storage' => NULL, 'submitted' => FALSE);
-  $form_build_id = $_POST['form_build_id'];
-  $form = form_get_cache($form_build_id, $form_state);
-  $args = $form['#parameters'];
-  $form_id = array_shift($args);
-  $form['#post'] = $_POST;
-  $form['#redirect'] = FALSE;
-  $form['#programmed'] = FALSE;
-  $form_state['post'] = $_POST;
-  drupal_process_form($form_id, $form, $form_state);
-  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
-  $container = $form['options']['options'];
-  unset($container['#prefix'], $container['#suffix']); // Prevent duplicate wrappers.
-  $javascript = drupal_add_js(NULL, NULL, 'header');
-  drupal_json(array(
-    'status' => TRUE,
-    'data' => theme('status_messages') . drupal_render($container),
-    'settings' => call_user_func_array('array_merge_recursive', $javascript['setting']),
-  ));
+function rate_widget_form_ajax($form, $form_state) {
+  return $form['options']['options'];
 }
 
 /**
@@ -597,7 +583,9 @@ function rate_widget_form_ahah() {
  *
  * @ingroup themeable
  */
-function theme_rate_admin_types($element) {
+function theme_rate_admin_types($variables) {
+  $element = $variables['element'];
+
   $header = array(
     t('Name'),
     t('Node'),
@@ -615,7 +603,7 @@ function theme_rate_admin_types($element) {
       );
     }
   }
-  return theme('table', $header, $rows);
+  return theme('table', array('header' => $header, 'rows' => $rows));
 }
 
 /**
@@ -623,7 +611,9 @@ function theme_rate_admin_types($element) {
  *
  * @ingroup themeable
  */
-function theme_rate_admin_options($element) {
+function theme_rate_admin_options($variables) {
+  $element = $variables['element'];
+
   $header = array(
     t('Value'),
     t('Label'),
@@ -643,26 +633,28 @@ function theme_rate_admin_options($element) {
       );
     }
   }
-  return theme('table', $header, $rows);
+  return theme('table', array('header' => $header, 'rows' => $rows));
 }
 
 /**
  * Form for deleting widgets.
  */
-function rate_widget_delete_form(&$form_state, $id) {
+function rate_widget_delete_form($form, &$form_state, $id) {
   $form = array();
 
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
 
   $form['#widget_id'] = $id;
 
-  if (!$title = $widgets[$id]->title) {
+  if (!isset($widgets[$id])) {
     drupal_not_found();
-    module_invoke_all('exit') & exit;
+    module_invoke_all('exit') && exit;
   }
-  
+
+  $title = $widgets[$id]->title;
+
   $form['info'] = array(
-    '#value' => '<p>' . t('Are you sure you want to delete widget %title?', array('%title' => $title)) . '</p>'
+    '#markup' => '<p>' . t('Are you sure you want to delete widget %title?', array('%title' => $title)) . '</p>'
   );
 
   $form['buttons']['submit'] = array(
@@ -671,7 +663,7 @@ function rate_widget_delete_form(&$form_state, $id) {
   );
 
   $form['buttons']['cancel'] = array(
-    '#value' => l('Cancel', RATE_PATH_ADMIN_PAGE),
+    '#markup' => l(t('Cancel'), RATE_PATH_ADMIN_PAGE),
   );
 
   return $form;
@@ -682,16 +674,16 @@ function rate_widget_delete_form(&$form_state, $id) {
  */
 function rate_widget_delete_form_submit($form, &$form_state) {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
-  if ($title = $widgets[$form['#widget_id']]->title) {
+  if (isset($widgets[$form['#widget_id']])) {
+    $widget = $widgets[$form['#widget_id']];
+
     unset($widgets[$form['#widget_id']]);
     variable_set(RATE_VAR_WIDGETS, $widgets);
-    drupal_set_message(t('Widget %title has been deleted.', array('%title' => $title)));
+
+    drupal_set_message(t('Widget %title has been deleted.', array('%title' => $widget->title)));
 
     // Let other modules act on this action.
-    foreach (module_implements('rate_widget') as $module) {
-      $hook = "{$module}_rate_widget";
-      $hook('delete', $widgets[$form['#widget_id']], $form_state['values']);
-    }
+    module_invoke_all('rate_widget_delete', $widget);
   }
   $form_state['redirect'] = RATE_PATH_ADMIN_PAGE;
 }
