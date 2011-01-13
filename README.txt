@@ -170,13 +170,29 @@ You may use the following snippets in the template:
 
 * Print a button for a single option:
 
-    <?php print $links[0]['content']; ?>
+    <?php
+    print theme('rate_button', array(
+      'text' => $links[0]['text'],
+      'href' => $links[0]['href'],
+      'class' => "extra-class")
+    );
+    ?>
 
   '0' is the first option (see §2.1). For a thumbs up / down
   configuration you will have:
 
-    <?php print $links[0]['content']; ?>
-    <?php print $links[1]['content']; ?>
+    <?php
+    print theme('rate_button', array(
+      'text' => $links[0]['text'],
+      'href' => $links[0]['href'],
+      'class' => "extra-class")
+    );
+    print theme('rate_button', array(
+      'text' => $links[1]['text'],
+      'href' => $links[1]['href'],
+      'class' => "extra-class")
+    );
+    ?>
 
 * Print the rating when using value type 'percentage' or 'points':
 
@@ -202,7 +218,7 @@ You may use the following snippets in the template:
 You can choose to not automatically add the widget to the node template. In that
 case, the widget can be used as:
 
-<?php print $node->rate_NAME['#value']; ?>
+<?php print $node->rate_NAME['#markup']; ?>
 
 Replace NAME by the widget's machine readable name.
 
@@ -260,12 +276,18 @@ a custom block with the PHP code input filter or a panel with PHP code and use
 the following code:
 
 <?php
-if (arg(0) == 'node' && is_numeric(arg(1)) && $node = node_load(arg(1))) {
-  node_invoke_nodeapi($node, 'view');
-  print $node->rate_NAME['#value'];
+if (arg(0) == 'node' && is_numeric(arg(1)) && ($node = node_load(arg(1)))) {
+  print rate_embed($node, 'NAME');
 }
 ?>
 
-Replace NAME by the widget's machine readable name.
+Replace NAME by the widget's machine readable name. If you already have a loaded
+node object, you just need the "print rate_embed" line.
 
-The display setting for nodes must be set to "Do not add automatically".
+You may also use different build modes:
+
+print rate_embed($node, 'NAME', RATE_FULL);
+print rate_embed($node, 'NAME', RATE_COMPACT);
+print rate_embed($node, 'NAME', RATE_DISABLED);
+print rate_embed($node, 'NAME', RATE_CLOSED);
+
