@@ -462,7 +462,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
 /**
  * Implements hook_node_view().
  */
-function rate_node_view(&$node, $view_mode, $langcode = '') {
+function rate_node_view($node, $view_mode, $langcode = '') {
   // Adding the form to the node view
   $widgets = rate_get_active_widgets('node', $node->type, $view_mode);
   foreach ($widgets as $widget_id => $widget) {
