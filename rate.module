@@ -449,7 +449,33 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     'value' => $value,
     'tag' => $widget->tag,
   );
-  votingapi_set_votes($votes);
+
+  // Call hook_rate_vote_alter().
+  $redirect = FALSE;
+  $save = TRUE;
+  $context = array(
+    'redirect' => &$redirect,
+    'save' => &$save,
+    'widget' => $widget,
+  );
+  drupal_alter('rate_vote', $votes, $context);
+
+  if ($save) {
+    votingapi_set_votes($votes);
+  }
+  if ($redirect) {
+    preg_match('/^(.+?)(\\?(.*?))?(\\#(.*))?$/', $redirect, $parts);
+    $path = $parts[1];
+    $query = isset($parts[3]) ? $parts[3] : '';
+    $fragment = isset($parts[5]) ? $parts[5] : '';
+    if ($ahah) {
+      print url($path, array('absolute' => TRUE, 'query' => $query, 'fragment' => $fragment));
+      module_invoke_all('exit') & exit;
+    }
+    else {
+      drupal_goto($path, $query, $fragment);
+    }
+  }
 }
 
 /**

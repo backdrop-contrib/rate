@@ -56,3 +56,28 @@ function hook_rate_widget($op, &$widget, $values = NULL) {
       break;
   }
 }
+
+/**
+ * Alter the vote before it is saved.
+ *
+ * @param array $vote
+ *   array(
+ *     'entity_type' => $content_type,
+ *     'entity_id' => $content_id,
+ *     'value_type' => $widget->value_type,
+ *     'value' => $value,
+ *     'tag' => $widget->tag,
+ *   );
+ * @param array $context
+ *   array(
+ *     'redirect' => &$redirect, // Path. Alter to redirect the user.
+ *     'save' => &$save, // Boolean indicating whether the vote must be saved.
+ *     'widget' => $widget, // Widget object, unalterable.
+ *   );
+ */
+function hook_rate_vote_alter($vote, $context) {
+  // Redirect users to the feedback page when they click on thumbs down.
+  if ($context['widget']->name == 'thumbs_up_down' && $vote['value'] == -1) {
+    $context['redirect'] = 'feedback';
+  }
+}
