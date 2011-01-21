@@ -456,7 +456,29 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     'value' => $value,
     'tag' => $widget->tag,
   );
-  votingapi_set_votes($votes);
+
+  // Call hook_rate_vote_alter().
+  $redirect = FALSE;
+  $save = TRUE;
+  $context = array(
+    'redirect' => &$redirect,
+    'save' => &$save,
+    'widget' => $widget,
+  );
+  drupal_alter('rate_vote', $votes, $context);
+  
+  if ($save) {
+    votingapi_set_votes($votes);
+  }
+  if ($redirect) {
+    if ($ahah) {
+      print url($redirect, array('absolute' => TRUE));
+      module_invoke_all('exit') & exit;
+    }
+    else {
+      drupal_goto($redirect);
+    }
+  }
 }
 
 /**

@@ -41,24 +41,69 @@ function hook_rate_templates() {
 }
 
 /**
- * Hook on actions done on rate widgets.
+ * Alter the rate widget before display.
  *
- * @param string $op
- * @param object $widget
- * @param array $values Form values from rate_widget_form (on insert and update)
- *   or an arra with the keys "content_type", "content_id"
- *   and "teaser" (on load).
+ * @param object $widget Widget object
+ * @param array $context
+ *   array(
+ *     'content_type' => $content_type,
+ *     'content_id' => $content_id,
+ *   );
  */
-function hook_rate_widget($op, &$widget, $values = NULL) {
-  switch ($op) {
-    case 'insert':
-    case 'update':
-      // Elements which are added to the $widget are saved automatically.
-      break;
-    case 'delete':
-      break;
-    case 'view':
-      // The $widget object may be altered here before display.
-      break;
+function hook_rate_widget_alter(&$widget, $context) {
+  
+}
+
+/**
+ * Take actions before saving rate widget to the database.
+ *
+ * @param object $widget Widget object
+ * @param array $values Values from $form_state['values']
+ */
+function hook_rate_widget_insert(&$widget, $values) {
+
+}
+
+/**
+ * Take actions before updating rate widget.
+ *
+ * @param object $widget Widget object
+ * @param array $values Values from $form_state['values']
+ */
+function hook_rate_widget_update(&$widget, $values) {
+  
+}
+
+/**
+ * Take action after deleting rate widget.
+ *
+ * @param object $widget Widget object
+ */
+function hook_rate_widget_delete(&$widget) {
+  
+}
+
+/**
+ * Alter the vote before it is saved.
+ * 
+ * @param array $vote
+ *   array(
+ *     'entity_type' => $content_type,
+ *     'entity_id' => $content_id,
+ *     'value_type' => $widget->value_type,
+ *     'value' => $value,
+ *     'tag' => $widget->tag,
+ *   );
+ * @param array $context
+ *   array(
+ *     'redirect' => &$redirect, // Path. Alter to redirect the user.
+ *     'save' => &$save, // Boolean indicating whether the vote must be saved.
+ *     'widget' => $widget, // Widget object, unalterable.
+ *   );
+ */
+function hook_rate_vote_alter($vote, $context) {
+  // Redirect users to the feedback page when they click on thumbs down.
+  if ($context['widget']->name == 'vote_up_down' && $vote['value'] == -1) {
+    $context['redirect'] = 'feedback';
   }
 }
