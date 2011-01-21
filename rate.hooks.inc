@@ -103,7 +103,7 @@ function hook_rate_widget_delete(&$widget) {
  */
 function hook_rate_vote_alter($vote, $context) {
   // Redirect users to the feedback page when they click on thumbs down.
-  if ($context['widget']->name == 'vote_up_down' && $vote['value'] == -1) {
+  if ($context['widget']->name == 'thumbs_up_down' && $vote['value'] == -1) {
     $context['redirect'] = 'feedback';
   }
 }

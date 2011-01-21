@@ -471,12 +471,21 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     votingapi_set_votes($votes);
   }
   if ($redirect) {
+    preg_match('/^(.+?)(\\?(.*?))?(\\#(.*))?$/', $redirect, $parts);
+    $path = $parts[1];
+    if (isset($parts[3])) {
+      parse_str($parts[3], $query);
+    }
+    else {
+      $query = array();
+    }
+    $fragment = isset($parts[5]) ? $parts[5] : '';
     if ($ahah) {
-      print url($redirect, array('absolute' => TRUE));
+      print url($path, array('absolute' => TRUE, 'query' => $query, 'fragment' => $fragment));
       module_invoke_all('exit') & exit;
     }
     else {
-      drupal_goto($redirect);
+      drupal_goto($path, $query, $fragment);
     }
   }
 }
