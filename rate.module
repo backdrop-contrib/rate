@@ -32,6 +32,7 @@ define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/structure/rate/%/delete');
 define('RATE_PATH_ADMIN_PAGE_TEMPLATE', 'admin/structure/rate/%/template');
 define('RATE_PATH_AHAH', 'rate/vote/js');
 define('RATE_PATH_RESULTS_PAGE', 'node/%node/results');
+define('RATE_PATH_LOGIN_PAGE', 'user/login-to-rate');
 
 // Define constants for variable names.
 define('RATE_VAR_WIDGETS', 'rate_widgets');
@@ -128,6 +129,13 @@ function rate_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
     'file' => 'rate.results.inc',
+  );
+
+  $menu[RATE_PATH_LOGIN_PAGE] = array(
+    'title' => 'Log in',
+    'page callback' => 'rate_login_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
   );
 
   return $menu;
@@ -419,19 +427,17 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   if (!$allow_voting) {
     switch ($widget->noperm_behaviour) {
       case RATE_NOPERM_REDIRECT_WITH_MESSAGE:
-        drupal_set_message(t('You must login before you can vote.'));
-      
         // Redirects via AHAH have a destination param to prevent redirecting to the AJAX callback.
         $destination = isset($_GET['destination']) ? $_GET['destination'] : $_GET['q'];
         // Strip off protocol domain name to prevent long query strings in URL.
         $destination = preg_replace('/http:\\/\\/[^\\/]+\\//', '', $destination);
         $query = array('destination' => $destination);
         if ($ahah) {
-          print url('user', array('query' => $query, 'absolute' => TRUE));
+          print url('user/login-to-rate', array('query' => $query, 'absolute' => TRUE));
           module_invoke_all('exit') & exit;
         }
         else {
-          drupal_goto('user', array('query' => $query));
+          drupal_goto('user/login-to-rate', array('query' => $query));
         }
         break;
       case RATE_NOPERM_REDIRECT_WITHOUT_MESSAGE:
@@ -850,4 +856,18 @@ function rate_machine_name_exists($machine_name) {
 function rate_get_token($value = '') {
   global $user;
   return drupal_hmac_base64($value, $user->uid . drupal_get_private_key() . drupal_get_hash_salt());
+}
+
+/**
+ * Page callback to generate a user login page with message.
+ * 
+ * @return string
+ */
+function rate_login_page() {
+  drupal_set_message(t('You must login before you can vote.'));
+
+  drupal_set_title(t('Log in'));
+
+  module_load_include('inc', 'user', 'user.pages');
+  return user_page();
 }
