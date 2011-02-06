@@ -145,6 +145,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     $widget->teaser_display = FALSE;
     $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
     $widget->roles = array();
+    $widget->allow_voting_by_author = TRUE;
     $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
   }
   
@@ -164,6 +165,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
   isset($widget->teaser_display) or $widget->teaser_display = TRUE;
   isset($widget->comment_display) or $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
   isset($widget->roles) or $widget->roles = array();
+  isset($widget->allow_voting_by_author) or $widget->allow_voting_by_author = TRUE;
   isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
 
   if (!isset($widget->template)) {
@@ -415,6 +417,12 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#default_value' => $widget->roles,
     '#description' => t('Allow voting only for the selected role(s). If you select no roles, all users are allowed to vote.'),
   );
+  $form['permissions']['allow_voting_by_author'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow author to rate his / her own content'),
+    '#default_value' => $widget->allow_voting_by_author,
+    '#description' => t('Will change the state to disabled. Always true for anonymous users.'),
+  );
   $options = array(
     RATE_NOPERM_REDIRECT_WITH_MESSAGE => t('Redirect to login and show message'),
     RATE_NOPERM_REDIRECT_WITHOUT_MESSAGE => t('Redirect to login but do not show a message'),
@@ -509,6 +517,7 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->teaser_display = (bool) $form_state['values']['teaser_display'];
   $widget->comment_display = $form_state['values']['comment_display'];
   $widget->roles = $form_state['values']['roles'];
+  $widget->allow_voting_by_author = $form_state['values']['allow_voting_by_author'];
   $widget->noperm_behaviour = $form_state['values']['noperm_behaviour'];
 
   if ($widget->template != 'custom') {

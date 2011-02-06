@@ -37,6 +37,11 @@ define('RATE_PATH_LOGIN_PAGE', 'user/login-to-rate');
 // Define constants for variable names.
 define('RATE_VAR_WIDGETS', 'rate_widgets');
 
+// Define constants for permission status.
+define('RATE_PERMISSION_OK', 1);
+define('RATE_PERMISSION_DISALLOWED_ROLE', 2);
+define('RATE_PERMISSION_DISALLOWED_AUTHOR', 3);
+
 /**
  * Implements hook_perm().
  */
@@ -182,15 +187,19 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   $widget = $widgets[$widget_id];
 
   // Determine if the user may vote.
-  $allow_voting = _rate_check_permissions($widget);
+  $node = $content_type == 'node' ? node_load($content_id) : NULL;
+  $permission_status = _rate_check_permissions($widget, $node);
   
   // This option should be available, check for legacy.
   isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
 
-  if (!$allow_voting && $widget->noperm_behaviour == RATE_NOPERM_HIDE_WIDGET) {
+  if ($permission_status != RATE_PERMISSION_OK && $widget->noperm_behaviour == RATE_NOPERM_HIDE_WIDGET) {
     return NULL;
   }
-  elseif (!$allow_voting && $widget->noperm_behaviour == RATE_NOPERM_SHOW_DISABLED_WIDGET) {
+  elseif ($permission_status == RATE_PERMISSION_DISALLOWED_ROLE && $widget->noperm_behaviour == RATE_NOPERM_SHOW_DISABLED_WIDGET) {
+    $mode = RATE_DISABLED;
+  }
+  elseif ($permission_status == RATE_PERMISSION_DISALLOWED_AUTHOR) {
     $mode = RATE_DISABLED;
   }
 
@@ -292,27 +301,37 @@ function _rate_get_query($token = NULL) {
  * @param object $widget
  * @return bool
  */
-function _rate_check_permissions($widget) {
+function _rate_check_permissions($widget, $node = NULL) {
   global $user;
 
   // This option should be available, check for legacy.
   isset($widget->roles) or $widget->roles = array();
+  isset($widget->allow_voting_by_author) or $widget->allow_voting_by_author = TRUE;
+
+  if (!$widget->allow_voting_by_author) {
+    if ($user->uid == 0) {
+      return RATE_PERMISSION_DISALLOWED_ROLE;
+    }
+    if ($node && $node->uid == $user->uid) {
+      return RATE_PERMISSION_DISALLOWED_AUTHOR;
+    }
+  }
 
   $roles_selected = FALSE;
   foreach ($widget->roles as $rid => $role) {
     if ($role) {
       $roles_selected = TRUE;
       if (isset($user->roles[$rid])) {
-        return TRUE;
+        return RATE_PERMISSION_OK;
       }
     }
   }
   if (!$roles_selected) {
     // Allow voting for all roles if no roles are selected.
-    return TRUE;
+    return RATE_PERMISSION_OK;
   }
 
-  return FALSE;
+  return RATE_PERMISSION_DISALLOWED_ROLE;
 }
 
 /**
@@ -419,12 +438,13 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   $saved = TRUE;
 
   // Determine if the user may vote.
-  $allow_voting = _rate_check_permissions($widget);
-
+  $node = $content_type == 'node' ? node_load($content_id) : NULL;
+  $permission_status = _rate_check_permissions($widget, $node);
+  
   // This option should be available, check for legacy.
   isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
 
-  if (!$allow_voting) {
+  if ($permission_status != RATE_PERMISSION_OK) {
     switch ($widget->noperm_behaviour) {
       case RATE_NOPERM_REDIRECT_WITH_MESSAGE:
         // Redirects via AHAH have a destination param to prevent redirecting to the AJAX callback.
