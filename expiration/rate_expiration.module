@@ -168,7 +168,7 @@ function rate_expiration_form_alter(&$form, &$form_state, $form_id) {
  * Array_filter() callback. Filter widgets without the allow_override option.
  */
 function _rate_expiration_filter_widgets($item) {
-  return isset($item->expiration_allow_override);
+  return !empty($item->expiration_allow_override);
 }
 
 /**
