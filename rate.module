@@ -219,7 +219,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   foreach ($widget->options as $option) {
     // This name must be unique for all submit buttons across the page.
     $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
-    $token = drupal_get_token($id);
+    $token = _rate_get_token($id);
     if (isset($_GET['rate']) && $_GET['rate'] == $token) {
       rate_save_vote($widget, $content_type, $content_id, $option[0]);
       drupal_goto($_GET['q'], _rate_get_query());
@@ -564,7 +564,7 @@ function rate_vote_ahah() {
   foreach ($widget->options as $option) {
     // This name must be unique for all submit buttons across the page, AHAH will fail otherwise.
     $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
-    $token = drupal_get_token($id);
+    $token = _rate_get_token($id);
     if (isset($_GET['token']) && $_GET['token'] == $token) {
       rate_save_vote($widget, $content_type, $content_id, $option[0], TRUE);
     }
@@ -733,6 +733,27 @@ function rate_views_widget_disabled($value, $field, $columns) {
 
 function rate_views_widget_compact($value, $field, $columns) {
   return rate_views_widget($value, $field, $columns, RATE_COMPACT);
+}
+
+/**
+ * Get a token for the voting button.
+ *
+ * This is a wrapper around drupal_get_token() to make this compatible with
+ * Pressflow. This function uses session_id(), which will generate a different
+ * id for each request from anonymous users when using Pressflow. Tokens will
+ * never match in this case, thus the votes are not cast.
+ *
+ * @param string $value
+ * @return string
+ */
+function _rate_get_token($value) {
+  global $user;
+  if ($user->uid) {
+    return drupal_get_token($value);
+  }
+  else {
+    return md5($value . drupal_get_private_key());
+  }
 }
 
 /**
