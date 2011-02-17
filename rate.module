@@ -265,7 +265,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   $widget_html = theme($theme, array('links' => $links, 'results' => $results, 'mode' => $widget->mode));
   if ($include_div) {
     return
-      '<div class="rate-widget rate-widget-' . $widget_id . '" id="' . $div_id . '">' .
+      '<div class="rate-widget rate-widget-' . $widget_id . ' clearfix" id="' . $div_id . '">' .
       $widget_html .
       '</div>';
   }
