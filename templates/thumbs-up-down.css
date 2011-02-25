@@ -1,34 +1,28 @@
 .rate-thumbs-up-down-btn-up {
-  display: block;
-  float: left;
+  display: inline-block;
   background: url(thumbs_up.png);
   width: 24px;
   height: 24px;
-  text-indent: 100px;
-  overflow: hidden;
+  text-indent: -999px;
 }
 
 .rate-thumbs-up-down-btn-down {
-  display: block;
-  float: left;
+  display: inline-block;
   background: url(thumbs_down.png);
   width: 24px;
   height: 24px;
-  text-indent: 100px;
-  overflow: hidden;
+  text-indent: -999px;
 }
 
 .rate-thumbs-up-down-rating-up {
-  display: block;
-  float: left;
+  display: inline-block;
   width: 45px;
   text-align: right;
   padding-top: 3px;
 }
 
 .rate-thumbs-up-down-rating-down {
-  display: block;
-  float: left;
+  display: inline-block;
   width: 45px;
   text-align: left;
   padding-top: 3px;

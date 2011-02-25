@@ -1,6 +1,5 @@
 a.rate-emotion-btn {
-  display: block;
-  float: left;
+  display: inline-block;
   background: #eee;
   border: #ccc;
   margin-right: 5px;
@@ -15,8 +14,7 @@ a.rate-emotion-btn:hover {
 }
 
 .rate-emotion-votes {
-  display: block;
-  float: left;
+  display: inline-block;
   margin-right: 5px;
   padding: 1px 2px;
   border: 1px;

@@ -1,20 +1,16 @@
 .rate-fivestar-btn-filled {
-  display: block;
-  float: left;
+  display: inline-block;
   background: url(fivestar_filled.png);
   width: 16px;
   height: 16px;
-  text-indent: 100px;
-  overflow: hidden;
+  text-indent: -999px;
 }
 
 .rate-fivestar-btn-empty {
-  display: block;
-  float: left;
+  display: inline-block;
   background: url(fivestar_empty.png);
   width: 16px;
   height: 16px;
-  text-indent: 100px;
-  overflow: hidden;
+  text-indent: -999px;
 }
 

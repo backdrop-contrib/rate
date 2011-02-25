@@ -1,9 +1,7 @@
 .rate-thumbs-up-btn-up {
-  display: block;
-  float: left;
+  display: inline-block;
   background: url(thumbs_up.png);
   width: 24px;
   height: 24px;
-  text-indent: 100px;
-  overflow: hidden;
+  text-indent: -999px;
 }
