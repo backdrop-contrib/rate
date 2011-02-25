@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  * Rate widget theme

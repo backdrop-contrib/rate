@@ -1,4 +1,3 @@
-// $Id$
 (function ($) {
   Drupal.behaviors.rate = {
     attach: function(context) {
