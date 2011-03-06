@@ -813,11 +813,37 @@ function rate_theme() {
 }
 
 /**
+ * Preprocess function for the emotion template.
+ */
+function rate_preprocess_rate_template_emotion(&$variables) {
+  extract($variables);
+  
+  $buttons = array();
+  foreach ($links as $link) {
+    $button = theme('rate_button', $link['text'], $link['href'], 'rate-emotion-btn');
+    $button .= $link['votes'];
+    $buttons[] = $button;
+  }
+  $variables['buttons'] = $buttons;
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode != RATE_COMPACT) {
+    if ($results['user_vote']) {
+      $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
+    }
+  }
+  $variables['info'] = implode(' ', $info);
+}
+
+/**
  * Preprocess function for the fivestar template.
  */
 function rate_preprocess_rate_template_fivestar(&$variables) {
   extract($variables);
-  
+
   $stars = array();
   $count = count($links);
   $percent_per_star = 100 / ($count - 1);
@@ -836,12 +862,82 @@ function rate_preprocess_rate_template_fivestar(&$variables) {
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
-  elseif ($mode == RATE_FULL) {
+  if ($mode  != RATE_COMPACT) {
     if (isset($results['user_vote'])) {
       $vote = round($results['user_vote'] / 25) + 1;
       $info[] = t('You voted !vote.', array('!vote' => $vote));
     }
     $info[] = t('Total votes: !count', array('!count' => $results['count']));
+  }
+  $variables['info'] = implode(' ', $info);
+}
+
+/**
+ * Preprocess function for the thumbs_up_down template.
+ */
+function rate_preprocess_rate_template_thumbs_up_down(&$variables) {
+  extract($variables);
+
+  $variables['up_button'] = theme('rate_button', $links[0]['text'], $links[0]['href'], 'rate-thumbs-up-down-btn-up');
+  $variables['down_button'] = theme('rate_button', $links[1]['text'], $links[1]['href'], 'rate-thumbs-up-down-btn-down');
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode  != RATE_COMPACT) {
+    if ($results['user_vote']) {
+      $info[] = t('You voted \'@option\'.', array('@option' => $results['user_vote'] == 1 ? $links[0]['text'] : $links[1]['text']));
+    }
+  }
+  $variables['info'] = implode(' ', $info);
+}
+
+/**
+ * Preprocess function for the thumbs_up_down template.
+ */
+function rate_preprocess_rate_template_thumbs_up(&$variables) {
+  extract($variables);
+
+  $variables['up_button'] = theme('rate_button', $links[0]['text'], $links[0]['href'], 'rate-thumbs-up-down-btn-up');
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode != RATE_COMPACT) {
+    if ($results['user_vote']) {
+      $info[] = format_plural($results['count'], 'Only you voted.', '@count users have voted, including you.');
+    }
+    else {
+      $info[] = format_plural($results['count'], '@count user has voted.', '@count users have voted.');
+    }
+  }
+  $variables['info'] = implode(' ', $info);
+}
+
+/**
+ * Preprocess function for the yesno template.
+ */
+function rate_preprocess_rate_template_yesno(&$variables) {
+  extract($variables);
+
+  $buttons = array();
+  foreach ($links as $link) {
+    $button = theme('rate_button', $link['text'], $link['href'], 'rate-yesno-btn');
+    $button .= $link['votes'];
+    $buttons[] = $button;
+  }
+  $variables['buttons'] = $buttons;
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode != RATE_COMPACT) {
+    if ($results['user_vote']) {
+      $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
+    }
   }
   $variables['info'] = implode(' ', $info);
 }
