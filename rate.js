@@ -12,6 +12,10 @@
         };
 
         $('a.rate-button', widget).click(function() {
+
+          // Invoke JavaScript hook.
+          $.event.trigger('eventBeforeRate', [data]);
+
           var token = this.getAttribute('href').match(/rate\=([a-zA-Z0-9\-_]{32,64})/)[1];
 
           // Random number to prevent caching, see http://drupal.org/node/1042216#comment-4046618
@@ -25,6 +29,9 @@
             else {
               // get parent object
               var p = widget.parent();
+
+              // Invoke JavaScript hook.
+              $.event.trigger('eventAfterRate', [data]);
 
               widget.before(data);
 
