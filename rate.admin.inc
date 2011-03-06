@@ -525,6 +525,7 @@ function rate_widget_form_submit($form, &$form_state) {
     $widget->value_type = $template->value_type;
     !isset($template->theme) or $widget->theme = $template->theme;
     !isset($template->css) or $widget->css = $template->css;
+    !isset($template->js) or $widget->js = $template->js;
     $widget->translate = $template->translate;
     if (isset($form_state['values']['translate'])) {
       $widget->translate = (bool) $form_state['values']['translate'];
