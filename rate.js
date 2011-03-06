@@ -10,6 +10,10 @@ Drupal.behaviors.rate = function(context) {
     };
     
     $('a.rate-button', widget).click(function() {
+
+      // Invoke JavaScript hook.
+      $.event.trigger('eventBeforeRate', [data]);
+      
       var token = this.getAttribute('href').match(/rate\=([a-f0-9]{32})/)[1];
 
       // Random number to prevent caching, see http://drupal.org/node/1042216#comment-4046618
@@ -23,6 +27,9 @@ Drupal.behaviors.rate = function(context) {
         else {
           // get parent object
           var p = widget.parent();
+
+          // Invoke JavaScript hook.
+          $.event.trigger('eventAfterRate', [data]);
           
           widget.before(data);
           
