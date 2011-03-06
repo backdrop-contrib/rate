@@ -170,7 +170,7 @@ function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
  * @param bool $include_div
  * @return array
  */
-function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE) {
+function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE, $just_voted = FALSE) {
   global $user;
 
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
@@ -195,7 +195,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
 
   // Store the display mode in $widget, so it can be altered by hook_rate_widget.
   $widget->mode = $mode;
-
+  
   // Let other modules alter the rate widget.
   foreach (module_implements('rate_widget') as $module) {
     $hook = "{$module}_rate_widget";
@@ -251,7 +251,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     $widget->mode = $mode;
   }
 
-  $widget_html = theme($theme, $links, $results, $widget->mode);
+  $widget_html = theme($theme, $links, $results, $widget->mode, $just_voted);
   if ($include_div) {
     return
       '<div class="rate-widget rate-widget-' . $widget_id . ' clear-block" id="' . $div_id . '">' .
@@ -569,7 +569,7 @@ function rate_vote_ahah() {
     }
   }
 
-  print rate_generate_widget($widget_id, $content_type, $content_id, $widget_mode);
+  print rate_generate_widget($widget_id, $content_type, $content_id, $widget_mode, TRUE, TRUE);
 
   module_invoke_all('exit') & exit;
 }
@@ -762,7 +762,7 @@ function rate_theme() {
   return array(
     'rate_widget' => array(
       'pattern' => 'rate_widget__',
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE),
       'template' => 'rate-widget',
     ),
     'rate_button' => array(
@@ -780,27 +780,27 @@ function rate_theme() {
 
     // Templates for default widget types.
     'rate_template_thumbs_up' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE),
       'template' => 'thumbs-up',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_thumbs_up_down' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE),
       'template' => 'thumbs-up-down',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_fivestar' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE),
       'template' => 'fivestar',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_emotion' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE),
       'template' => 'emotion',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
     'rate_template_yesno' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE),
       'template' => 'yesno',
       'path' => drupal_get_path('module', 'rate') . '/templates',
     ),
