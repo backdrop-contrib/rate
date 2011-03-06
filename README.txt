@@ -16,6 +16,7 @@ CONTENTS
 6. Views integration
 7. Expiration (close voting on a specified date)
 8. Using rate in blocks or panels
+9. Hooks
 
 1. Installation
 --------------------------------------------------------------------------------
@@ -290,3 +291,13 @@ print rate_embed($node, 'NAME', RATE_COMPACT);
 print rate_embed($node, 'NAME', RATE_DISABLED);
 print rate_embed($node, 'NAME', RATE_CLOSED);
 
+9. Hooks
+--------------------------------------------------------------------------------
+There are two Javascript hooks available; eventBeforeRate and eventAfterRate.
+This hook has an argument 'data'. This is an object which contains the variables
+'content_type', 'content_id', 'widget_id' and 'widget_mode'. Example of use:
+
+$(document).bind('eventAfterRate', function(event, data)
+{
+  alert('eventAfterRate called');
+});
