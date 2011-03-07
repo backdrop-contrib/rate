@@ -8,10 +8,11 @@
  * file for information on theming widgets.
  */
 
-$num = 0;
-foreach ($links as $link) {
-  ++$num;
-  print theme('rate_button', $link['text'], $link['href'], "rate-button-$num");
+print theme('item_list', $buttons);
+
+if ($info) {
+  print '<div class="rate-info">' . $info . '</div>';
 }
 
-print t('Total votes: !count', array('!count' => $results['count'])); ?>
+?>
+

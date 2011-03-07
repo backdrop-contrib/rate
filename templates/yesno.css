@@ -1,3 +1,19 @@
+.rate-widget-yesno ul {
+  list-style: none;
+  overflow: hidden;
+}
+.rate-widget-yesno .item-list ul li {
+  background-image: none;
+  padding: 0;
+}
+.rate-widget-yesno ul li {
+  float: left;
+  list-style: none;
+}
+.rate-widget-yesno ul li a {
+  display: block;
+  float: left;
+}
 a.rate-yesno-btn {
   display: inline-block;
   background: #eee;

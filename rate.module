@@ -162,7 +162,7 @@ function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
 
 /**
  * Generate a widget.
- * 
+ *
  * @param int $widget_id Widget id
  * @param string $content_type "node" or "comment"
  * @param int $content_id Node id (nid) or comment id (cid)
@@ -179,7 +179,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   // Determine if the user may vote.
   $node = $content_type == 'node' ? node_load($content_id) : NULL;
   $permission_status = _rate_check_permissions($widget, $node);
-  
+
   // This option should be available, check for legacy.
   isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
 
@@ -195,7 +195,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
 
   // Store the display mode in $widget, so it can be altered by hook_rate_widget.
   $widget->mode = $mode;
-  
+
   // Let other modules alter the rate widget.
   foreach (module_implements('rate_widget') as $module) {
     $hook = "{$module}_rate_widget";
@@ -257,7 +257,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
 
   $widget_html = theme($theme, $links, $results, $widget->mode, $just_voted);
   if ($include_div) {
-    $classes = array('rate-widget', 'rate-widget-' . $widget_id, 'clear-block');
+    $classes = array('rate-widget-' . $widget_id, 'rate-widget', 'clear-block');
     if (!empty($widget->template)) {
       $classes[] = 'rate-widget-' . $widget->template;
     }
@@ -341,7 +341,7 @@ function _rate_check_permissions($widget, $node = NULL) {
  */
 function rate_get_results($content_type, $content_id, $widget_id) {
   global $user;
-  
+
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
   $criteria = array(
@@ -409,7 +409,7 @@ function rate_get_results($content_type, $content_id, $widget_id) {
       }
     }
   }
-  
+
   return $output;
 }
 
@@ -642,7 +642,7 @@ function rate_rate_templates() {
   $templates['fivestar']->customizable = FALSE;
   $templates['fivestar']->translate = FALSE;
   $templates['fivestar']->template_title = t('Fivestar');
-  
+
   $templates['emotion'] = new stdClass();
   $templates['emotion']->value_type = 'option';
   $templates['emotion']->options = array(
@@ -718,7 +718,7 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
       $value_type = $votingapi_setting['value'];
     }
   }
-  
+
   $content_type = 'node';
   $content_id = $columns->nid;
   $node_type = isset($columns->node_type) ? $columns->node_type : db_result(db_query('SELECT type FROM {node} WHERE nid = %d', $columns->nid));
@@ -819,9 +819,34 @@ function rate_theme() {
 /**
  * Preprocess function for the emotion template.
  */
+function rate_preprocess_rate_widget(&$variables) {
+  extract($variables);
+
+  $buttons = array();
+  foreach ($links as $link) {
+    $button = theme('rate_button', $link['text'], $link['href'], 'rate-btn');
+    $buttons[] = $button;
+  }
+  $variables['buttons'] = $buttons;
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode != RATE_COMPACT) {
+    if ($results['user_vote']) {
+      $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
+    }
+  }
+  $variables['info'] = implode(' ', $info);
+}
+
+/**
+ * Preprocess function for the emotion template.
+ */
 function rate_preprocess_rate_template_emotion(&$variables) {
   extract($variables);
-  
+
   $buttons = array();
   foreach ($links as $link) {
     $button = theme('rate_button', $link['text'], $link['href'], 'rate-emotion-btn');
@@ -904,7 +929,7 @@ function rate_preprocess_rate_template_thumbs_up_down(&$variables) {
 function rate_preprocess_rate_template_thumbs_up(&$variables) {
   extract($variables);
 
-  $variables['up_button'] = theme('rate_button', $links[0]['text'], $links[0]['href'], 'rate-thumbs-up-down-btn-up');
+  $variables['up_button'] = theme('rate_button', $links[0]['text'], $links[0]['href'], 'rate-thumbs-up-btn-up');
 
   $info = array();
   if ($mode == RATE_CLOSED) {
@@ -977,3 +1002,4 @@ function theme_rate_button($text, $href, $class = NULL) {
       '</a>';
   }
 }
+
