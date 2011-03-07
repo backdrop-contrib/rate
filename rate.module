@@ -872,6 +872,7 @@ function rate_preprocess_rate_template_fivestar(&$variables) {
     else {
       $class = 'rate-fivestar-btn-empty';
     }
+    $class .= ' rate-fivestar-' . ($i + 1);
     $stars[] = theme('rate_button', array('text' => $links[$i]['text'], 'href' => $links[$i]['href'], 'class' => $class));
   }
   $variables['stars'] = $stars;
