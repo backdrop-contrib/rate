@@ -1,3 +1,20 @@
+.rate-widget-fivestar ul {
+  list-style: none;
+  overflow: hidden;
+}
+.rate-widget-fivestar .item-list ul li {
+  background-image: none;
+  padding: 0;
+  margin: 0;
+}
+.rate-widget-fivestar ul li {
+  float: left;
+  list-style: none;
+}
+.rate-widget-fivestar ul li a {
+  display: block;
+  float: left;
+}
 .rate-fivestar-btn-filled {
   display: inline-block;
   background: url(fivestar_filled.png);
@@ -5,7 +22,6 @@
   height: 16px;
   text-indent: -999px;
 }
-
 .rate-fivestar-btn-empty {
   display: inline-block;
   background: url(fivestar_empty.png);

@@ -1,3 +1,19 @@
+.rate-widget-emotion ul {
+  list-style: none;
+  overflow: hidden;
+}
+.rate-widget-emotion .item-list ul li {
+  background-image: none;
+  padding: 0;
+}
+.rate-widget-emotion ul li {
+  float: left;
+  list-style: none;
+}
+.rate-widget-emotion ul li a {
+  display: block;
+  float: left;
+}
 a.rate-emotion-btn {
   display: inline-block;
   background: #eee;
@@ -20,3 +36,4 @@ a.rate-emotion-btn:hover {
   border: 1px;
   font-size: 0.8em;
 }
+
