@@ -257,8 +257,12 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
 
   $widget_html = theme($theme, $links, $results, $widget->mode, $just_voted);
   if ($include_div) {
+    $classes = array('rate-widget', 'rate-widget-' . $widget_id, 'clear-block');
+    if (!empty($widget->template)) {
+      $classes[] = 'rate-widget-' . $widget->template;
+    }
     return
-      '<div class="rate-widget rate-widget-' . $widget_id . ' clear-block" id="' . $div_id . '">' .
+      '<div class="' . implode(' ', $classes) . '" id="' . $div_id . '">' .
       $widget_html .
       '</div>';
   }
