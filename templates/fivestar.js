@@ -4,8 +4,9 @@
       $('.rate-widget-fivestar ul:not(.rate-fivestar-processed)', context).addClass('rate-fivestar-processed').each(function () {
         var $this = $(this);
         // Save the current vote status
-        var status = $('li a.rate-fivestar-btn-filled').length;
-        
+
+        var status = $('li a.rate-fivestar-btn-filled', $this).length;
+
         $this.children().hover(
             function()
             {
