@@ -9,12 +9,18 @@
 define('RATE_FULL', 1);
 define('RATE_COMPACT', 2);
 define('RATE_DISABLED', 3);
+define('RATE_COMPACT_DISABLED', 5);
 define('RATE_CLOSED', 4);
 
 // Define display modes for node / comment bodies.
 define('RATE_DISPLAY_DISABLE', 0);
 define('RATE_DISPLAY_ABOVE_CONTENT', 1);
 define('RATE_DISPLAY_BELOW_CONTENT', 2);
+
+// Define modes for which rating to display
+define('RATE_AVERAGE', 1);
+define('RATE_USER', 2);
+define('RATE_USER_OR_AVERAGE', 3);
 
 // Define modes for behaviour with users w/o permission to vote.
 define('RATE_NOPERM_REDIRECT_WITH_MESSAGE', 1);
@@ -170,7 +176,7 @@ function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
  * @param bool $include_div
  * @return array
  */
-function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE, $just_voted = FALSE) {
+function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE, $just_voted = FALSE, $displayed = NULL) {
   global $user;
 
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
@@ -210,8 +216,46 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     $theme = $widget->theme;
   }
 
+  // Get voting results.
   $results = rate_get_results($content_type, $content_id, $widget_id);
 
+  $results['empty'] = $results['count'] ? FALSE : TRUE;
+  
+  // Handle interaction modes.
+  if (is_null($displayed)) {
+    $displayed = RATE_AVERAGE;
+    if ($just_voted) {
+      if ($widget->displayed_just_voted == RATE_USER) {
+        $displayed = RATE_USER;
+      }
+    }
+    else {
+      if (isset($results['user_vote']) && $widget->displayed == RATE_USER_OR_AVERAGE) {
+        $displayed = RATE_USER;
+      }
+      if ($widget->displayed == RATE_USER) {
+        $displayed = RATE_USER;
+      }
+    }
+  }
+  elseif ($displayed == RATE_USER_OR_AVERAGE && isset($results['user_vote'])) {
+    $displayed = RATE_USER;
+  }
+  elseif ($displayed == RATE_USER) {
+    $displayed = RATE_USER;
+  }
+  else {
+    $displayed = RATE_AVERAGE;
+  }
+  if ($displayed == RATE_USER) {
+    $results['rating'] = isset($results['user_vote']) ? $results['user_vote'] : 0;
+    if (!isset($results['user_vote'])) {
+      // We should display an empty rating in this case.
+      $results['empty'] = TRUE;
+    }
+  }
+
+  // Add generic javascript.
   drupal_add_js(drupal_get_path('module', 'rate') . '/rate.js');
 
   $links = array();
@@ -232,9 +276,13 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     else {
       $link_votes = NULL;
     }
+    $disabled = FALSE;
+    if ($widget->mode == RATE_DISABLED || $widget->mode == RATE_COMPACT_DISABLED || $widget->mode == RATE_CLOSED) {
+      $disabled = TRUE;
+    }
     $links[] = array(
       'text' => $link_text,
-      'href' => $widget->mode != RATE_DISABLED && $widget->mode != RATE_CLOSED ? $link_href : NULL,
+      'href' => $disabled ? NULL : $link_href,
       'value' => $option[0],
       'votes' => $link_votes,
     );
@@ -248,16 +296,17 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     drupal_add_js($widget->js);
   }
 
-  if ($widget->mode == RATE_CLOSED && ($mode == RATE_COMPACT || $mode == RATE_DISABLED)) {
+  if ($widget->mode == RATE_CLOSED && ($mode == RATE_COMPACT || $mode == RATE_DISABLED || $mode == RATE_COMPACT_DISABLED)) {
     // The widget was closed by hook_rate_widget, but we want to display a compact or disabled
     // widget. Set the mode back to compact / disabled in order to display a compact / disabled
     // widget with disabled voting buttons.
-    $widget->mode = $mode;
+    $widget->mode = $mode == RATE_DISABLED ? RATE_DISABLED : RATE_COMPACT_DISABLED;
   }
 
   $widget_html = theme($theme, $links, $results, $widget->mode, $just_voted);
   if ($include_div) {
     $classes = array('rate-widget-' . $widget_id, 'rate-widget', 'clear-block');
+    $classes[] = $displayed == RATE_AVERAGE ? 'rate-average' : 'rate-user';
     if (!empty($widget->template)) {
       $classes[] = 'rate-widget-' . $widget->template;
     }
@@ -698,6 +747,7 @@ function rate_votingapi_views_formatters($details = array()) {
   if ($details->field == 'value') {
     return array(
       'rate_views_widget_disabled' => t('Rate widget (display only)'),
+      'rate_views_widget_compact_disabled' => t('Rate widget (display only, compact)'),
       'rate_views_widget_compact' => t('Rate widget (compact)'),
       'rate_views_widget' => t('Rate widget'),
     );
@@ -723,11 +773,18 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
   $content_id = $columns->nid;
   $node_type = isset($columns->node_type) ? $columns->node_type : db_result(db_query('SELECT type FROM {node} WHERE nid = %d', $columns->nid));
 
+  if ($field->query->table_queue[$field->relationship]['table'] == 'votingapi_cache') {
+    $displayed_rating = RATE_AVERAGE;
+  }
+  else {
+    $displayed_rating = RATE_USER;
+  }
+
   // Loop through all the widgets and search for a suitable widget to display.
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   foreach ($widgets as $widget_id => $widget) {
     if ($tag == $widget->tag && $value_type == $widget->value_type && in_array($node_type, $widget->node_types)) {
-      return rate_generate_widget($widget_id, $content_type, $content_id, $mode);
+      return rate_generate_widget($widget_id, $content_type, $content_id, $mode, TRUE, FALSE, $displayed_rating);
     }
   }
 
@@ -741,6 +798,10 @@ function rate_views_widget_disabled($value, $field, $columns) {
 
 function rate_views_widget_compact($value, $field, $columns) {
   return rate_views_widget($value, $field, $columns, RATE_COMPACT);
+}
+
+function rate_views_widget_compact_disabled($value, $field, $columns) {
+  return rate_views_widget($value, $field, $columns, RATE_COMPACT_DISABLED);
 }
 
 /**
@@ -833,7 +894,7 @@ function rate_preprocess_rate_widget(&$variables) {
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
-  if ($mode != RATE_COMPACT) {
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
     if ($results['user_vote']) {
       $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
     }
@@ -859,7 +920,7 @@ function rate_preprocess_rate_template_emotion(&$variables) {
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
-  if ($mode != RATE_COMPACT) {
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
     if ($results['user_vote']) {
       $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
     }
@@ -877,7 +938,7 @@ function rate_preprocess_rate_template_fivestar(&$variables) {
   $count = count($links);
   $percent_per_star = 100 / ($count - 1);
   for ($i = 0; $i < $count; $i++) {
-    if (round($results['rating'] / $percent_per_star) >= $i && $results['count']) {
+    if (round($results['rating'] / $percent_per_star) >= $i && !$results['empty']) {
       $class = 'rate-fivestar-btn-filled';
     }
     else {
@@ -892,7 +953,7 @@ function rate_preprocess_rate_template_fivestar(&$variables) {
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
-  if ($mode  != RATE_COMPACT) {
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
     if (isset($results['user_vote'])) {
       $vote = round($results['user_vote'] / 25) + 1;
       $info[] = t('You voted !vote.', array('!vote' => $vote));
@@ -915,7 +976,7 @@ function rate_preprocess_rate_template_thumbs_up_down(&$variables) {
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
-  if ($mode  != RATE_COMPACT) {
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
     if ($results['user_vote']) {
       $info[] = t('You voted \'@option\'.', array('@option' => $results['user_vote'] == 1 ? $links[0]['text'] : $links[1]['text']));
     }
@@ -935,7 +996,7 @@ function rate_preprocess_rate_template_thumbs_up(&$variables) {
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
-  if ($mode != RATE_COMPACT) {
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
     if ($results['user_vote']) {
       $info[] = format_plural($results['count'], 'Only you voted.', '@count users have voted, including you.');
     }
@@ -964,7 +1025,7 @@ function rate_preprocess_rate_template_yesno(&$variables) {
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
-  if ($mode != RATE_COMPACT) {
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
     if ($results['user_vote']) {
       $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
     }
