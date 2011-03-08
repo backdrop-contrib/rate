@@ -3,7 +3,7 @@ Drupal.behaviors.highlightedStarRate = function(context) {
     $('.rate-widget-fivestar ul:not(.highlightedStarRate-processed)',context).addClass('.highlightedStarRate-processed').each(function() {
         var $this = $(this);
         // Save the current vote status
-        var status = $('li a.rate-fivestar-btn-filled').length;
+        var status = $('li a.rate-fivestar-btn-filled', $this).length;
 
         $this.children().hover(
             function()
