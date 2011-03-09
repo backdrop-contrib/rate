@@ -797,7 +797,7 @@ function rate_votingapi_views_formatters($details = array()) {
 }
 
 function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
-  if ($field->view->base_table != 'node') {
+  if ($field->view->base_table != 'node' && $field->view->base_table != 'comments') {
     return '';
   }
 
@@ -811,10 +811,29 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
     }
   }
 
-  $content_type = 'node';
-  $content_id = $columns->nid;
-  $node_type = isset($columns->node_type) ? $columns->node_type : db_result(db_query('SELECT type FROM {node} WHERE nid = %d', $columns->nid));
-
+  switch ($field->view->base_table) {
+    case 'node':
+      $content_type = 'node';
+      $content_id = $columns->nid;
+      if (isset($columns->node_type)) {
+        $node_type = $columns->node_type;
+      }
+      else {
+        $node_type = db_result(db_query('SELECT type FROM {node} WHERE nid = %d', $columns->nid));
+      }
+      break;
+    case 'comments':
+      $content_type = 'comment';
+      $content_id = $columns->cid;
+      if (isset($columns->node_type)) {
+        $node_type = $columns->node_type;
+      }
+      else {
+        $node_type = db_result(db_query('SELECT n.type FROM {comments} c JOIN {node} n ON n.nid = c.nid WHERE c.cid = %d', $columns->cid));
+      }
+      break;
+  }
+  
   if ($field->query->table_queue[$field->relationship]['table'] == 'votingapi_cache') {
     $displayed_rating = RATE_AVERAGE;
   }
