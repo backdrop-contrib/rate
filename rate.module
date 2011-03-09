@@ -180,6 +180,11 @@ function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
 function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE, $just_voted = FALSE, $displayed = NULL) {
   global $user;
 
+  // Check input.
+  if (!is_numeric($widget_id) || empty($content_type) || !is_numeric($content_id)) {
+    return NULL;
+  }
+
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
 
@@ -1057,7 +1062,7 @@ function rate_preprocess_rate_template_fivestar(&$variables) {
  */
 function rate_preprocess_rate_template_thumbs_up_down(&$variables) {
   extract($variables);
-
+  
   $variables['up_button'] = theme('rate_button', $links[0]['text'], $links[0]['href'], 'rate-thumbs-up-down-btn-up');
   $variables['down_button'] = theme('rate_button', $links[1]['text'], $links[1]['href'], 'rate-thumbs-up-down-btn-down');
 
