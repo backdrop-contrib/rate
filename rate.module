@@ -187,6 +187,11 @@ function rate_get_active_widgets($content_type, $type, $view_mode = 'full') {
 function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE, $just_voted = FALSE, $displayed = NULL) {
   global $user;
 
+  // Check input.
+  if (!is_numeric($widget_id) || empty($content_type) || !is_numeric($content_id)) {
+    return NULL;
+  }
+
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
 
