@@ -38,7 +38,7 @@ define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/build/rate/%/delete');
 define('RATE_PATH_ADMIN_PAGE_TEMPLATE', 'admin/build/rate/%/template');
 define('RATE_PATH_ADMIN_AHAH', 'rate/options/js');
 define('RATE_PATH_AHAH', 'rate/vote/js');
-define('RATE_PATH_RESULTS_PAGE', 'node/%node/results');
+define('RATE_PATH_RESULTS_PAGE', 'node/%node/rating');
 
 // Define constants for variable names.
 define('RATE_VAR_WIDGETS', 'rate_widgets');
