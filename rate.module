@@ -564,9 +564,10 @@ function rate_nodeapi(&$node, $op, $a3, $a4) {
     $widgets = rate_get_active_widgets('node', $node->type, $a3);
     foreach ($widgets as $widget_id => $widget) {
       $widget_name = 'rate_' . $widget->name;
-      isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+      _rate_check_widget($widget);
+      $display_mode = $a3 ? $widget->teaser_display_mode : $widget->node_display_mode;
       $widget_code = array(
-        '#value' => rate_generate_widget($widget_id, 'node', $node->nid),
+        '#value' => rate_generate_widget($widget_id, 'node', $node->nid, $display_mode),
         '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? 0 : 50,
       );
       if ($widget->node_display != RATE_DISPLAY_ABOVE_CONTENT && $widget->node_display != RATE_DISPLAY_BELOW_CONTENT) {
@@ -589,7 +590,8 @@ function rate_comment(&$comment, $op) {
     $widgets = rate_get_active_widgets('comment', $node->type);
     foreach ($widgets as $widget_id => $widget) {
       $widget_name = 'rate_' . $widget->name;
-      $widget_code = rate_generate_widget($widget_id, 'comment', $comment->cid);
+      _rate_check_widget($widget);
+      $widget_code = rate_generate_widget($widget_id, 'comment', $comment->cid, $widget->comment_display_mode);
       switch ($widget->comment_display) {
         case RATE_DISPLAY_ABOVE_CONTENT:
           $comment->comment = $widget_code . $comment->comment;
@@ -615,9 +617,10 @@ function rate_link($type, $object, $teaser = FALSE) {
   if ($type == 'node') {
     $widgets = rate_get_active_widgets('node', $object->type, $teaser);
     foreach ($widgets as $widget_id => $widget) {
+      _rate_check_widget($widget);
       $widget_name = 'rate_' . $widget->name;
-      $widget_code = rate_generate_widget($widget_id, 'node', $object->nid);
-      isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+      $display_mode = $teaser ? $widget->teaser_display_mode : $widget->node_display_mode;
+      $widget_code = rate_generate_widget($widget_id, 'node', $object->nid, $display_mode);
       if ($widget->node_display == RATE_DISPLAY_LINKS) {
         $links[$widget_name] = array(
           'title' => $widget_code,
@@ -632,8 +635,9 @@ function rate_link($type, $object, $teaser = FALSE) {
   	$node = node_load($object->nid);
     $widgets = rate_get_active_widgets('comment', $node->type);
     foreach ($widgets as $widget_id => $widget) {
+      _rate_check_widget($widget);
       $widget_name = 'rate_' . $widget->name;
-      $widget_code = rate_generate_widget($widget_id, 'comment', $object->cid);
+      $widget_code = rate_generate_widget($widget_id, 'comment', $object->cid, $widget->comment_display_mode);
       if ($widget->comment_display == RATE_DISPLAY_LINKS) {
         $links[$widget_name] = array(
           'title' => $widget_code,
@@ -884,6 +888,30 @@ function _rate_get_token($value) {
   else {
     return md5($value . drupal_get_private_key());
   }
+}
+
+/**
+ * Check widget object for missing values.
+ * We use this for legacy reasons. Values may not be available after updating
+ * from an old version.
+ *
+ * @param object $widget
+ */
+function _rate_check_widget(&$widget) {
+  isset($widget->translate) or $widget->translate = TRUE;
+  isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+  isset($widget->teaser_display) or $widget->teaser_display = TRUE;
+  isset($widget->comment_display) or $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
+  isset($widget->node_display_mode) or $widget->node_display_mode = RATE_FULL;
+  isset($widget->teaser_display_mode) or $widget->teaser_display_mode = RATE_FULL;
+  isset($widget->comment_display_mode) or $widget->comment_display_mode = RATE_FULL;
+  isset($widget->roles) or $widget->roles = array();
+  isset($widget->allow_voting_by_author) or $widget->allow_voting_by_author = TRUE;
+  isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
+  isset($widget->displayed) or $widget->displayed = RATE_AVERAGE;
+  isset($widget->displayed_just_voted) or $widget->displayed_just_voted = RATE_USER;
+  isset($widget->template) or $widget->template = 'custom';
+  isset($widget->customizable) or $widget->customizable = TRUE;
 }
 
 /**
