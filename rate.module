@@ -187,6 +187,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
 
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
+  _rate_check_widget($widget);
 
   // Determine if the user may vote.
   $node = $content_type == 'node' ? node_load($content_id) : NULL;
@@ -1062,16 +1063,29 @@ function rate_preprocess_rate_template_fivestar(&$variables) {
  */
 function rate_preprocess_rate_template_thumbs_up_down(&$variables) {
   extract($variables);
-  
-  $variables['up_button'] = theme('rate_button', $links[0]['text'], $links[0]['href'], 'rate-thumbs-up-down-btn-up');
-  $variables['down_button'] = theme('rate_button', $links[1]['text'], $links[1]['href'], 'rate-thumbs-up-down-btn-down');
+
+  $up_classes = 'rate-thumbs-up-down-btn-up';
+  $down_classes = 'rate-thumbs-up-down-btn-down';
+  if (isset($results['user_vote'])) {
+    switch ($results['user_vote']) {
+      case $links[0]['value']:
+        $up_classes .= ' rate-voted';
+        break;
+      case $links[1]['value']:
+        $down_classes .= ' rate-voted';
+        break;
+    }
+  }
+
+  $variables['up_button'] = theme('rate_button', $links[0]['text'], $links[0]['href'], $up_classes);
+  $variables['down_button'] = theme('rate_button', $links[1]['text'], $links[1]['href'], $down_classes);
 
   $info = array();
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
   }
   if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
-    if ($results['user_vote']) {
+    if (isset($results['user_vote'])) {
       $info[] = t('You voted \'@option\'.', array('@option' => $results['user_vote'] == 1 ? $links[0]['text'] : $links[1]['text']));
     }
   }
