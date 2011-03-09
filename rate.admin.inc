@@ -141,6 +141,9 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     $widget->template = 'custom';
     $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
     $widget->teaser_display = FALSE;
+    $widget->node_display_mode = RATE_FULL;
+    $widget->teaser_display_mode = RATE_FULL;
+    $widget->comment_display_mode = RATE_FULL;
     $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
     $widget->roles = array();
     $widget->allow_voting_by_author = TRUE;
@@ -159,21 +162,10 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     $widget->template = $_GET['template'];
   }
 
-  // These options should always be available, but we have to check for legacy.
-  isset($widget->translate) or $widget->translate = TRUE;
-  isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
-  isset($widget->teaser_display) or $widget->teaser_display = TRUE;
-  isset($widget->comment_display) or $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
-  isset($widget->roles) or $widget->roles = array();
-  isset($widget->allow_voting_by_author) or $widget->allow_voting_by_author = TRUE;
-  isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
-  isset($widget->displayed) or $widget->displayed = RATE_AVERAGE;
-  isset($widget->displayed_just_voted) or $widget->displayed_just_voted = RATE_USER;
+  // Check widget for missing values (legacy).
+  _rate_check_widget($widget);
 
-  if (!isset($widget->template)) {
-    $widget->template = 'custom';
-  }
-  elseif ($widget->template != 'custom') {
+  if ($widget->template != 'custom') {
     if (!$template = _rate_get_template($widget->template)) {
       $form['error'] = array(
         '#markup' => t('You cannot edit this widget because it was built using the template %template which does not exists anymore.', array('%template' => $widget->template)),
@@ -186,10 +178,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
       $widget->value_type = $template->value_type;
     }
   }
-  if (!isset($widget->customizable)) {
-    $widget->customizable = TRUE;
-  }
-
+  
   if ($id) {
     $form['#widget_id'] = $id;
   }
@@ -375,7 +364,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#collapsed' => TRUE,
   );
 
-  $options = array(
+  $display_options = array(
     RATE_DISPLAY_DISABLE => t('Do not add automatically'),
     RATE_DISPLAY_ABOVE_CONTENT => t('Above the content'),
     RATE_DISPLAY_BELOW_CONTENT => t('Below the content'),
@@ -383,7 +372,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
   $form['display']['node_display'] = array(
     '#type' => 'radios',
     '#title' => t('Node display'),
-    '#options' => $options,
+    '#options' => $display_options,
     '#default_value' => $widget->node_display,
   );
   $form['display']['teaser_display'] = array(
@@ -391,11 +380,37 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#title' => t('Display in teaser'),
     '#default_value' => $widget->teaser_display,
   );
+
+  $display_mode_options = array(
+    RATE_FULL => t('Full widget'),
+    RATE_DISABLED => t('Display only'),
+    RATE_COMPACT_DISABLED => t('Display only, compact'),
+    RATE_COMPACT => t('Compact'),
+  );
+  $form['display']['node_display_mode'] = array(
+    '#type' => 'select',
+    '#title' => t('Appearance in full node'),
+    '#options' => $display_mode_options,
+    '#default_value' => $widget->node_display_mode,
+  );
+  $form['display']['teaser_display_mode'] = array(
+    '#type' => 'select',
+    '#title' => t('Appearance in teaser'),
+    '#options' => $display_mode_options,
+    '#default_value' => $widget->teaser_display_mode,
+  );
+
   $form['display']['comment_display'] = array(
     '#type' => 'radios',
     '#title' => t('Comment display'),
-    '#options' => $options,
+    '#options' => $display_options,
     '#default_value' => $widget->comment_display,
+  );
+  $form['display']['comment_display_mode'] = array(
+    '#type' => 'select',
+    '#title' => t('Appearance in comments'),
+    '#options' => $display_mode_options,
+    '#default_value' => $widget->comment_display_mode,
   );
 
   $form['interaction'] = array(
@@ -548,6 +563,9 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->node_display = $form_state['values']['node_display'];
   $widget->teaser_display = (bool) $form_state['values']['teaser_display'];
   $widget->comment_display = $form_state['values']['comment_display'];
+  $widget->node_display_mode = $form_state['values']['node_display_mode'];
+  $widget->teaser_display_mode = $form_state['values']['teaser_display_mode'];
+  $widget->comment_display_mode = $form_state['values']['comment_display_mode'];
   $widget->roles = $form_state['values']['roles'];
   $widget->allow_voting_by_author = $form_state['values']['allow_voting_by_author'];
   $widget->noperm_behaviour = $form_state['values']['noperm_behaviour'];

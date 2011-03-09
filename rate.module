@@ -580,10 +580,11 @@ function rate_node_view($node, $view_mode, $langcode = '') {
   $widgets = rate_get_active_widgets('node', $node->type, $view_mode);
   foreach ($widgets as $widget_id => $widget) {
     $widget_name = 'rate_' . $widget->name;
-    isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+    _rate_check_widget($widget);
+    $display_mode = $view_mode == 'teaser' ? $widget->teaser_display_mode : $widget->node_display_mode;
     $widget_code = array(
       '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? -50 : 50,
-      '#markup' => rate_generate_widget($widget_id, 'node', $node->nid),
+      '#markup' => rate_generate_widget($widget_id, 'node', $node->nid, $display_mode),
     );
     if ($widget->node_display == RATE_DISPLAY_DISABLE) {
       $node->$widget_name = $widget_code;
@@ -854,6 +855,54 @@ function rate_views_widget_compact_disabled($value, $field, $columns) {
 }
 
 /**
+<<<<<<< HEAD
+=======
+ * Get a token for the voting button.
+ *
+ * This is a wrapper around drupal_get_token() to make this compatible with
+ * Pressflow. This function uses session_id(), which will generate a different
+ * id for each request from anonymous users when using Pressflow. Tokens will
+ * never match in this case, thus the votes are not cast.
+ *
+ * @param string $value
+ * @return string
+ */
+function _rate_get_token($value) {
+  global $user;
+  if ($user->uid) {
+    return drupal_get_token($value);
+  }
+  else {
+    return md5($value . drupal_get_private_key());
+  }
+}
+
+/**
+ * Check widget object for missing values.
+ * We use this for legacy reasons. Values may not be available after updating
+ * from an old version.
+ *
+ * @param object $widget
+ */
+function _rate_check_widget(&$widget) {
+  isset($widget->translate) or $widget->translate = TRUE;
+  isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+  isset($widget->teaser_display) or $widget->teaser_display = TRUE;
+  isset($widget->comment_display) or $widget->comment_display = RATE_DISPLAY_BELOW_CONTENT;
+  isset($widget->node_display_mode) or $widget->node_display_mode = RATE_FULL;
+  isset($widget->teaser_display_mode) or $widget->teaser_display_mode = RATE_FULL;
+  isset($widget->comment_display_mode) or $widget->comment_display_mode = RATE_FULL;
+  isset($widget->roles) or $widget->roles = array();
+  isset($widget->allow_voting_by_author) or $widget->allow_voting_by_author = TRUE;
+  isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
+  isset($widget->displayed) or $widget->displayed = RATE_AVERAGE;
+  isset($widget->displayed_just_voted) or $widget->displayed_just_voted = RATE_USER;
+  isset($widget->template) or $widget->template = 'custom';
+  isset($widget->customizable) or $widget->customizable = TRUE;
+}
+
+/**
+>>>>>>> 84509eb... by mauritsl: Add display mode (full, compact etc.) for full node views, teasers and comments.
  * Implements hook_theme().
  */
 function rate_theme() {
