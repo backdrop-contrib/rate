@@ -24,6 +24,12 @@
   position: relative;
   left: 53px;
 }
+.rate-user .rate-thumbs-up-down-btn-up {
+  background: url(thumbs_up_gray.png);
+}
+.rate-user .rate-thumbs-up-down-btn-up.rate-voted {
+  background: url(thumbs_up.png);
+}
 .rate-widget-thumbs_up_down .thumb-up {
   position: relative;
   left: -20px;
@@ -35,6 +41,12 @@
   width: 24px;
   height: 24px;
   text-indent: -999px;
+}
+.rate-user .rate-thumbs-up-down-btn-down {
+  background: url(thumbs_down_gray.png);
+}
+.rate-user .rate-thumbs-up-down-btn-down.rate-voted {
+  background: url(thumbs_down.png);
 }
 
 .rate-thumbs-up-down-rating-up {
