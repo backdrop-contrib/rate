@@ -785,7 +785,7 @@ function rate_votingapi_views_formatters($details = array()) {
 }
 
 function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
-  if ($field->view->base_table != 'node') {
+  if ($field->view->base_table != 'node' && $field->view->base_table != 'comments') {
     return '';
   }
 
@@ -799,16 +799,29 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
     }
   }
 
-  $content_type = 'node';
-  $content_id = $columns->nid;
-
-  if (isset($columns->node_type)) {
-    $node_type = $columns->node_type;
+  switch ($field->view->base_table) {
+    case 'node':
+      $content_type = 'node';
+      $content_id = $columns->nid;
+      if (isset($columns->node_type)) {
+        $node_type = $columns->node_type;
+      }
+      else {
+        $node_type = db_select('node', 'n')->fields('n', array('type'))->condition('nid', $columns->nid)->execute()->fetchField();
+      }
+      break;
+    case 'comments':
+      $content_type = 'comment';
+      $content_id = $columns->cid;
+      if (isset($columns->node_type)) {
+        $node_type = $columns->node_type;
+      }
+      else {
+        $node_type = db_select('comments', 'c')->fields('n', array('type'))->join('node', 'n', 'n.nid = c.nid')->condition('c.cid', $columns->cid)->execute()->fetchField();
+      }
+      break;
   }
-  else {
-    $node_type = db_select('node', 'n')->fields('n', array('type'))->condition('nid', $columns->nid)->execute()->fetchField();
-  }
-
+  
   if ($field->query->table_queue[$field->relationship]['table'] == 'votingapi_cache') {
     $displayed_rating = RATE_AVERAGE;
   }
