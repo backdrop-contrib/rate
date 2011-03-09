@@ -16,6 +16,7 @@ define('RATE_CLOSED', 4);
 define('RATE_DISPLAY_DISABLE', 0);
 define('RATE_DISPLAY_ABOVE_CONTENT', 1);
 define('RATE_DISPLAY_BELOW_CONTENT', 2);
+define('RATE_DISPLAY_LINKS', 3);
 
 // Define modes for which rating to display
 define('RATE_AVERAGE', 1);
@@ -568,7 +569,7 @@ function rate_nodeapi(&$node, $op, $a3, $a4) {
         '#value' => rate_generate_widget($widget_id, 'node', $node->nid),
         '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? 0 : 50,
       );
-      if ($widget->node_display == RATE_DISPLAY_DISABLE) {
+      if ($widget->node_display != RATE_DISPLAY_ABOVE_CONTENT && $widget->node_display != RATE_DISPLAY_BELOW_CONTENT) {
         $node->$widget_name = $widget_code;
       }
       else {
@@ -602,6 +603,47 @@ function rate_comment(&$comment, $op) {
       }
     }
 	}
+}
+
+/**
+ * Implements hook_link()
+ */
+function rate_link($type, $object, $teaser = FALSE) {
+  $links = array();
+
+  // Adding widget to node links
+  if ($type == 'node') {
+    $widgets = rate_get_active_widgets('node', $object->type, $teaser);
+    foreach ($widgets as $widget_id => $widget) {
+      $widget_name = 'rate_' . $widget->name;
+      $widget_code = rate_generate_widget($widget_id, 'node', $object->nid);
+      isset($widget->node_display) or $widget->node_display = RATE_DISPLAY_BELOW_CONTENT;
+      if ($widget->node_display == RATE_DISPLAY_LINKS) {
+        $links[$widget_name] = array(
+          'title' => $widget_code,
+          'html' => TRUE,
+        );
+      }
+    }
+  }
+
+  // Adding widget to comment links
+  if ($type == 'comment') {
+  	$node = node_load($object->nid);
+    $widgets = rate_get_active_widgets('comment', $node->type);
+    foreach ($widgets as $widget_id => $widget) {
+      $widget_name = 'rate_' . $widget->name;
+      $widget_code = rate_generate_widget($widget_id, 'comment', $object->cid);
+      if ($widget->comment_display == RATE_DISPLAY_LINKS) {
+        $links[$widget_name] = array(
+          'title' => $widget_code,
+          'html' => TRUE,
+        );
+      }
+    }
+  }
+
+  return $links;
 }
 
 /**

@@ -386,6 +386,7 @@ function rate_widget_form(&$form_state, $id = NULL) {
     RATE_DISPLAY_DISABLE => t('Do not add automatically'),
     RATE_DISPLAY_ABOVE_CONTENT => t('Above the content'),
     RATE_DISPLAY_BELOW_CONTENT => t('Below the content'),
+    RATE_DISPLAY_LINKS => t('Within the Links'),
   );
   $form['display']['node_display'] = array(
     '#type' => 'radios',
