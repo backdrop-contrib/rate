@@ -236,7 +236,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   $results = rate_get_results($content_type, $content_id, $widget_id);
 
   $results['empty'] = $results['count'] ? FALSE : TRUE;
-  
+
   // Handle interaction modes.
   if (is_null($displayed)) {
     $displayed = RATE_AVERAGE;
@@ -696,7 +696,7 @@ function rate_rate_templates() {
     array(1, 'up'),
   );
   $templates['thumbs_up']->theme = 'rate_template_thumbs_up';
-  $templates['thumbs_up']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up.css';
+  $templates['thumbs_up']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up/thumbs-up.css';
   $templates['thumbs_up']->customizable = FALSE;
   $templates['thumbs_up']->translate = TRUE;
   $templates['thumbs_up']->template_title = t('Thumbs up');
@@ -708,7 +708,7 @@ function rate_rate_templates() {
     array(-1, 'down'),
   );
   $templates['thumbs_up_down']->theme = 'rate_template_thumbs_up_down';
-  $templates['thumbs_up_down']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up-down.css';
+  $templates['thumbs_up_down']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up-down/thumbs-up-down.css';
   $templates['thumbs_up_down']->customizable = FALSE;
   $templates['thumbs_up_down']->translate = TRUE;
   $templates['thumbs_up_down']->template_title = t('Thumbs up / down');
@@ -723,8 +723,8 @@ function rate_rate_templates() {
     array(100, '5'),
   );
   $templates['fivestar']->theme = 'rate_template_fivestar';
-  $templates['fivestar']->css = drupal_get_path('module', 'rate') . '/templates/fivestar.css';
-  $templates['fivestar']->js = drupal_get_path('module', 'rate') . '/templates/fivestar.js';
+  $templates['fivestar']->css = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.css';
+  $templates['fivestar']->js = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.js';
   $templates['fivestar']->customizable = FALSE;
   $templates['fivestar']->translate = FALSE;
   $templates['fivestar']->template_title = t('Fivestar');
@@ -737,7 +737,7 @@ function rate_rate_templates() {
     array(3, 'angry'),
   );
   $templates['emotion']->theme = 'rate_template_emotion';
-  $templates['emotion']->css = drupal_get_path('module', 'rate') . '/templates/emotion.css';
+  $templates['emotion']->css = drupal_get_path('module', 'rate') . '/templates/emotion/emotion.css';
   $templates['emotion']->customizable = TRUE;
   $templates['emotion']->translate = TRUE;
   $templates['emotion']->template_title = t('Emotion');
@@ -749,7 +749,7 @@ function rate_rate_templates() {
     array(2, 'no'),
   );
   $templates['yesno']->theme = 'rate_template_yesno';
-  $templates['yesno']->css = drupal_get_path('module', 'rate') . '/templates/yesno.css';
+  $templates['yesno']->css = drupal_get_path('module', 'rate') . '/templates/yesno/yesno.css';
   $templates['yesno']->customizable = TRUE;
   $templates['yesno']->translate = TRUE;
   $templates['yesno']->template_title = t('Yes / no');
@@ -828,7 +828,7 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
       }
       break;
   }
-  
+
   if ($field->query->table_queue[$field->relationship]['table'] == 'votingapi_cache') {
     $displayed_rating = RATE_AVERAGE;
   }
@@ -931,27 +931,27 @@ function rate_theme() {
     'rate_template_thumbs_up' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
       'template' => 'thumbs-up',
-      'path' => drupal_get_path('module', 'rate') . '/templates',
+      'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up',
     ),
     'rate_template_thumbs_up_down' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
       'template' => 'thumbs-up-down',
-      'path' => drupal_get_path('module', 'rate') . '/templates',
+      'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up-down',
     ),
     'rate_template_fivestar' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
       'template' => 'fivestar',
-      'path' => drupal_get_path('module', 'rate') . '/templates',
+      'path' => drupal_get_path('module', 'rate') . '/templates/fivestar',
     ),
     'rate_template_emotion' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
       'template' => 'emotion',
-      'path' => drupal_get_path('module', 'rate') . '/templates',
+      'path' => drupal_get_path('module', 'rate') . '/templates/emotion',
     ),
     'rate_template_yesno' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
       'template' => 'yesno',
-      'path' => drupal_get_path('module', 'rate') . '/templates',
+      'path' => drupal_get_path('module', 'rate') . '/templates/yesno',
     ),
   );
 }

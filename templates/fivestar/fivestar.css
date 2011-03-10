@@ -17,17 +17,17 @@
 }
 .rate-fivestar-btn-filled {
   display: inline-block;
-  background: url(fivestar_yellow.png);
+  background: url(fivestar.png) no-repeat 0 -16px;
   width: 16px;
   height: 16px;
   text-indent: -999px;
 }
 .rate-user .rate-fivestar-btn-filled {
-  background: url(fivestar_red.png);
+  background: url(fivestar.png) no-repeat 0 0;
 }
 .rate-fivestar-btn-empty {
   display: inline-block;
-  background: url(fivestar_empty.png);
+  background: url(fivestar.png) no-repeat 0 -32px;
   width: 16px;
   height: 16px;
   text-indent: -999px;
