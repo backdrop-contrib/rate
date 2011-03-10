@@ -15,47 +15,45 @@
   display: block;
   float: left;
 }
+.rate-widget-thumbs_up_down .percent {
+  float: left;
+}
 .rate-thumbs-up-down-btn-up {
   display: inline-block;
-  background: url(thumbs_up.png);
+  background: url(thumbs.png) no-repeat 0 0;
   width: 24px;
   height: 24px;
   text-indent: -999px;
-  position: relative;
-  left: 53px;
 }
 .rate-user .rate-thumbs-up-down-btn-up {
-  background: url(thumbs_up_gray.png);
+  background: url(thumbs.png) no-repeat 0 -24px;
+  float: right;
 }
 .rate-user .rate-thumbs-up-down-btn-up.rate-voted {
-  background: url(thumbs_up.png);
+  background: url(thumbs.png) no-repeat 0 0;
 }
-.rate-widget-thumbs_up_down .thumb-up {
-  position: relative;
-  left: -20px;
+.rate-widget-thumbs_up_down .thumb-up a {
+  float: right;
 }
-
 .rate-thumbs-up-down-btn-down {
   display: inline-block;
-  background: url(thumbs_down.png);
+  background: url(thumbs.png) no-repeat 0 -48px;
   width: 24px;
   height: 24px;
   text-indent: -999px;
 }
 .rate-user .rate-thumbs-up-down-btn-down {
-  background: url(thumbs_down_gray.png);
+  background: url(thumbs.png) no-repeat 0 -72px;
 }
 .rate-user .rate-thumbs-up-down-btn-down.rate-voted {
-  background: url(thumbs_down.png);
+  background: url(thumbs.png) no-repeat 0 -48px;
 }
-
 .rate-thumbs-up-down-rating-up {
   display: inline-block;
   width: 45px;
   text-align: right;
   padding-top: 3px;
 }
-
 .rate-thumbs-up-down-rating-down {
   display: inline-block;
   width: 45px;

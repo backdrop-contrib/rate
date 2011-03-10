@@ -7,11 +7,11 @@
 <ul>
   <li class="thumb-up">
     <?php print $up_button; ?>
-    <?php print $results['up_percent'] . '%'; ?>
+    <div class="percent"><?php print $results['up_percent'] . '%'; ?></div>
   </li>
   <li class="thumb-down">
     <?php print $down_button; ?>
-    <?php print $results['down_percent'] . '%'; ?>
+    <div class="percent"><?php print $results['down_percent'] . '%'; ?></div>
   </li>
 </ul>
 <?php
