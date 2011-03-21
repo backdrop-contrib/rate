@@ -13,28 +13,33 @@
 function hook_rate_templates() {
   $templates = array();
 
-  $templates['thumbs_up'] = new stdClass();
-  $templates['thumbs_up']->value_type = 'points';
-  $templates['thumbs_up']->options = array(
-    array(1, 'up'),
-  );
-
   $templates['thumbs_up_down'] = new stdClass();
   $templates['thumbs_up_down']->value_type = 'points';
   $templates['thumbs_up_down']->options = array(
     array(1, 'up'),
     array(-1, 'down'),
   );
+  $templates['thumbs_up_down']->theme = 'rate_template_thumbs_up_down';
+  $templates['thumbs_up_down']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up-down/thumbs-up-down.css';
+  $templates['thumbs_up_down']->customizable = FALSE;
+  $templates['thumbs_up_down']->translate = TRUE;
+  $templates['thumbs_up_down']->template_title = t('Thumbs up / down');
 
   $templates['fivestar'] = new stdClass();
   $templates['fivestar']->value_type = 'percent';
   $templates['fivestar']->options = array(
-    array(0, '*'),
-    array(25, '**'),
-    array(50, '***'),
-    array(75, '****'),
-    array(100, '*****'),
+    array(0, '1'),
+    array(25, '2'),
+    array(50, '3'),
+    array(75, '4'),
+    array(100, '5'),
   );
+  $templates['fivestar']->theme = 'rate_template_fivestar';
+  $templates['fivestar']->css = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.css';
+  $templates['fivestar']->js = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.js';
+  $templates['fivestar']->customizable = FALSE;
+  $templates['fivestar']->translate = FALSE;
+  $templates['fivestar']->template_title = t('Fivestar');
 
   return $templates;
 }
