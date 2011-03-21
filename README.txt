@@ -89,10 +89,32 @@ use, these are "Value type", "Options" and "Translate options".
   * Above the content: The content will be prepended by the widget.
   * Below the content: Selected by default. The widget is appended to the
     content.
+  * Within the links: Add the widget inside the links section.
 * Display in teaser
   Check this box if you want the widget to be visible in the node teaser.
+* Appearance in full node
+  Display mode when full node is displayed. Options are:
+  * Full widget: Display the full, clickable widget.
+  * Display only: Display the full widget in disabled state (links are not
+    clickable).
+  * Display only, compact: Compact widget in disabled state.
+  * Compact: Clickable widget, but without information line.
+* Appearance in teaser
+  Display mode when node teaser is displayed.
 * Comment display
   Same as node display, but for comments.
+* Display mode when displayed for comments.
+* Which rating should be displayed?
+  Determines which rating to display. Options are:
+  * Average rating: Always display the average rating.
+  * Users vote if available, empty otherwise: Display the users vote. If the
+    user has not voted already, there is no voting result displayed.
+  * Users vote if available, average otherwise: Display the users vote. If the
+    user has not voted already, the average vote is displayed.
+* Which rating should be displayed when the user just voted?
+  Same as previous question. Applies directly after the user has voted. It is
+  recommended to set this to "Users vote" to provide a visible feedback after
+  a user has voted.
 * Roles
   Check the roles which are allowed to vote using this widget. All roles are
   allowed to vote if no roles are checked.
@@ -225,10 +247,10 @@ The voting results page is only available for nodes.
 6. Views integration
 --------------------------------------------------------------------------------
 This module provides views integration via the VotingAPI module. To add a rate
-widget in your view, first add a relation to "Node: Vote results". You have to
-configure a few options here. The "Value type" and "Vote tag" needs to be the
-same as used for the widget (see §2.1). The "aggregate" function must be
-"Number of votes".
+widget in your view, first add a relation to "Node: Vote results" for nodes or
+"Comment: Vote results" for comments. You have to configure a few options here.
+The "Value type" and "Vote tag" needs to be the same as used for the widget
+(see §2.1). The "aggregate" function must be "Number of votes".
 
 After adding the relationship, you can add the field "Vote results: Value" to
 your view. In the "Appearance" box you may choose one of the following:
@@ -242,11 +264,9 @@ your view. In the "Appearance" box you may choose one of the following:
 * Rate widget
   This shows the full widget (as on the node page).
 
-You are advised to add the "Node: Type" field to your view fields. If you do
-not, an additional query will be executed per row. You may exclude this field
-from display.
-
-Views integration for comments is not supported at the moment.
+When using a view on nodes, you are advised to add the "Node: Type" field to
+your view fields. If you do not, an additional query will be executed per row.
+You may exclude this field from display.
 
 7. Expiration (close voting on a specified date)
 --------------------------------------------------------------------------------
