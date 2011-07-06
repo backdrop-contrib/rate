@@ -982,7 +982,11 @@ function rate_preprocess_rate_widget(&$variables) {
 
   $buttons = array();
   foreach ($links as $link) {
-    $button = theme('rate_button', $link['text'], $link['href'], 'rate-btn');
+    $classes = 'rate-btn';
+    if (isset($results['user_vote']) && $results['user_vote'] == $link['value']) {
+      $classes .= ' user-voted';
+    }
+    $button = theme('rate_button', $link['text'], $link['href'], $classes);
     $buttons[] = $button;
   }
   $variables['buttons'] = $buttons;
