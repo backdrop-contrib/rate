@@ -670,13 +670,21 @@ function rate_vote_ahah() {
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   $widget = $widgets[$widget_id];
 
-  $links = array();
+  // Process options.
   foreach ($widget->options as $option) {
     // This name must be unique for all submit buttons across the page, AHAH will fail otherwise.
     $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
     $token = _rate_get_token($id);
     if (isset($_GET['token']) && $_GET['token'] == $token) {
       rate_save_vote($widget, $content_type, $content_id, $option[0], TRUE);
+    }
+  }
+
+  // Process arbitrary value, used for sliders.
+  if (isset($_GET['value']) && $widget->value_type == 'percent') {
+    $value = (int) $_GET['value'];
+    if ($value >= 0 && $value <= 100) {
+      rate_save_vote($widget, $content_type, $content_id, $value, TRUE);
     }
   }
 

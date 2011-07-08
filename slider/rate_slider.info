@@ -1,0 +1,6 @@
+name = Rate Slider
+description = Add a slider widget type
+core = 6.x
+package = Voting
+dependencies[] = rate
+dependencies[] = jquery_ui

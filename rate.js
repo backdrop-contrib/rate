@@ -10,38 +10,47 @@ Drupal.behaviors.rate = function(context) {
     };
     
     $('a.rate-button', widget).click(function() {
-
-      // Invoke JavaScript hook.
-      $.event.trigger('eventBeforeRate', [data]);
-      
       var token = this.getAttribute('href').match(/rate\=([a-f0-9]{32})/)[1];
-
-      // Random number to prevent caching, see http://drupal.org/node/1042216#comment-4046618
-      var random = Math.floor(Math.random() * 99999);
-    
-      $.get(Drupal.settings.basePath + '?q=rate%2Fvote%2Fjs&widget_id=' + data.widget_id + '&content_type=' + data.content_type + '&content_id=' + data.content_id + '&widget_mode=' + data.widget_mode + '&token=' + token + '&destination=' + escape(document.location) + '&r=' + random, function(data) {
-        if (data.match(/^https?\:\/\/[^\/]+\/(.*)$/)) {
-          // We got a redirect.
-          document.location = data;
-        }
-        else {
-          // get parent object
-          var p = widget.parent();
-
-          // Invoke JavaScript hook.
-          $.event.trigger('eventAfterRate', [data]);
-          
-          widget.before(data);
-          
-          // remove widget
-          widget.remove();
-          widget = undefined;
-          
-          Drupal.attachBehaviors(p.get(0));
-        }
-      });
-      
-      return false;
+      return Drupal.rateVote(widget, data, token);
     });
   });
+}
+
+Drupal.rateVote = function(widget, data, token) {
+  // Invoke JavaScript hook.
+  $.event.trigger('eventBeforeRate', [data]);
+
+  $(".rate-info", widget).text(Drupal.t('Saving vote...'));
+
+  // Random number to prevent caching, see http://drupal.org/node/1042216#comment-4046618
+  var random = Math.floor(Math.random() * 99999);
+
+  var q = '?q=rate%2Fvote%2Fjs&widget_id=' + data.widget_id + '&content_type=' + data.content_type + '&content_id=' + data.content_id + '&widget_mode=' + data.widget_mode + '&token=' + token + '&destination=' + escape(document.location) + '&r=' + random;
+  if (data.value) {
+    q = q + '&value=' + data.value;
+  }
+
+  $.get(Drupal.settings.basePath + q, function(data) {
+    if (data.match(/^https?\:\/\/[^\/]+\/(.*)$/)) {
+      // We got a redirect.
+      document.location = data;
+    }
+    else {
+      // get parent object
+      var p = widget.parent();
+
+      // Invoke JavaScript hook.
+      $.event.trigger('eventAfterRate', [data]);
+
+      widget.before(data);
+
+      // remove widget
+      widget.remove();
+      widget = undefined;
+
+      Drupal.attachBehaviors(p.get(0));
+    }
+  });
+
+  return false;
 }
