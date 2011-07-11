@@ -178,7 +178,7 @@ function rate_get_active_widgets($content_type, $type, $teaser = FALSE) {
  * @return array
  */
 function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE, $just_voted = FALSE, $displayed = NULL) {
-  global $user;
+  global $user, $conf;
 
   // Check input.
   if (!is_numeric($widget_id) || empty($content_type) || !is_numeric($content_id)) {
@@ -213,6 +213,11 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   foreach (module_implements('rate_widget') as $module) {
     $hook = "{$module}_rate_widget";
     $hook('view', $widget, array('content_type' => $content_type, 'content_id' => $content_id, 'teaser' => $teaser));
+  }
+
+  // Disable page cache when widget may be different for anonymous users.
+  if (variable_get('votingapi_anonymous_window', 3600) && $widget->displayed != RATE_AVERAGE) {
+    $conf['cache'] = CACHE_DISABLED;
   }
 
   $div_id = "rate-$content_type-$content_id-$widget_id-$mode";
