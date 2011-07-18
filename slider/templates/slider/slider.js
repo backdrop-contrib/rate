@@ -18,7 +18,11 @@ Drupal.behaviors.RateSlider = function(context) {
     if ($("ul a", widget).length > 0) {
       // Add the slider.
       s.slider({
-        min: 0, max: 100, steps: 100, startValue: v,
+        min: 0,
+        max: 100,
+        steps: 100,
+        startValue: v, // jQuery UI 1.2
+        value: v, // jQuery UI 1.3
         slide: function(event,ui) {
           //ui.value;
           $(".rate-slider-value", s).width(ui.value + '%');
