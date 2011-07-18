@@ -582,6 +582,7 @@ function rate_nodeapi(&$node, $op, $a3, $a4) {
       $widget_code = array(
         '#value' => rate_generate_widget($widget_id, 'node', $node->nid, $display_mode),
         '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? 0 : 50,
+        '#title' => $widget->title,
       );
       if ($widget->node_display != RATE_DISPLAY_ABOVE_CONTENT && $widget->node_display != RATE_DISPLAY_BELOW_CONTENT) {
         $node->$widget_name = $widget_code;
