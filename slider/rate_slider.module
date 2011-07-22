@@ -73,7 +73,7 @@ function rate_slider_preprocess_rate_template_slider(&$variables) {
   if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
     if (isset($results['user_vote'])) {
       $vote = $results['user_vote'];
-      $info[] = t('You voted !vote.', array('!vote' => $vote));
+      $info[] = t('You voted !vote.', array('!vote' => number_format($vote / 10, 1)));
     }
     $info[] = t('Total votes: !count', array('!count' => $results['count']));
   }

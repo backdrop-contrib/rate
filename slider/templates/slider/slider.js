@@ -18,14 +18,16 @@ Drupal.behaviors.RateSlider = function(context) {
     if ($("ul a", widget).length > 0) {
       // Add the slider.
       s.slider({
-        min: 0,
+        min: 10,
         max: 100,
-        steps: 100,
+        steps: 90,
         startValue: v, // jQuery UI 1.2
         value: v, // jQuery UI 1.3
         slide: function(event,ui) {
           //ui.value;
-          $(".rate-slider-value", s).width(ui.value + '%');
+          var vote = ui.value / 10;
+          $(".rate-slider-value", s).width(((ui.value - 10) * (10 / 9)) + '%');
+          $(".rate-info", widget).text(Drupal.t("Your vote: !vote", {"!vote": vote.toFixed(1)}));
         },
         stop: function(event,ui) {
           data.value = ui.value;
@@ -40,7 +42,7 @@ Drupal.behaviors.RateSlider = function(context) {
     }
 
     // Add the rating bar.
-    s.prepend('<div class="rate-slider-value" style="width: ' + v + '%" />');
+    s.prepend('<div class="rate-slider-value" style="width: ' + ((v - 10) * (10 / 9)) + '%" />');
 
     // Hide the links for the non-js variant.
     $("ul", widget).hide();
