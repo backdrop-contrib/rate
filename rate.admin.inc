@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @file
  * Rating admin
@@ -146,6 +145,8 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     $widget->roles = array();
     $widget->allow_voting_by_author = TRUE;
     $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
+    $widget->displayed = RATE_AVERAGE;
+    $widget->displayed_just_voted = RATE_USER;
   }
   
   // Determine the template from GET (which is only available before the form
@@ -166,6 +167,8 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
   isset($widget->roles) or $widget->roles = array();
   isset($widget->allow_voting_by_author) or $widget->allow_voting_by_author = TRUE;
   isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
+  isset($widget->displayed) or $widget->displayed = RATE_AVERAGE;
+  isset($widget->displayed_just_voted) or $widget->displayed_just_voted = RATE_USER;
 
   if (!isset($widget->template)) {
     $widget->template = 'custom';
@@ -395,6 +398,36 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#default_value' => $widget->comment_display,
   );
 
+  $form['interaction'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Interaction'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('Note that these settings do not apply for rate widgets inside views. Widgets in views will display the average voting when a relationship to the voting results is used and the users vote in case of a relationship to the votes.'),
+  );
+  
+  $options = array(
+    RATE_AVERAGE => t('Average rating'),
+    RATE_USER => t('Users vote if available, empty otherwise'),
+    RATE_USER_OR_AVERAGE => t('Users vote if available, average otherwise'),
+  );
+  $form['interaction']['displayed'] = array(
+    '#type' => 'radios',
+    '#title' => t('Which rating should be displayed?'),
+    '#options' => $options,
+    '#default_value' => $widget->displayed,
+  );
+  $options = array(
+    RATE_AVERAGE => t('Average rating'),
+    RATE_USER => t('Users vote'),
+  );
+  $form['interaction']['displayed_just_voted'] = array(
+    '#type' => 'radios',
+    '#title' => t('Which rating should be displayed when the user just voted?'),
+    '#options' => $options,
+    '#default_value' => $widget->displayed_just_voted,
+  );
+
   $form['permissions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Permissions'),
@@ -518,7 +551,9 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->roles = $form_state['values']['roles'];
   $widget->allow_voting_by_author = $form_state['values']['allow_voting_by_author'];
   $widget->noperm_behaviour = $form_state['values']['noperm_behaviour'];
-
+  $widget->displayed = $form_state['values']['displayed'];
+  $widget->displayed_just_voted = $form_state['values']['displayed_just_voted'];
+  
   if ($widget->template != 'custom') {
     // Take over the values from the template.
     $template = _rate_get_template($widget->template);
