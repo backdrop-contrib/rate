@@ -35,7 +35,7 @@ define('RATE_PATH_ADMIN_PAGE_EDIT', 'admin/structure/rate/%/edit');
 define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/structure/rate/%/delete');
 define('RATE_PATH_ADMIN_PAGE_TEMPLATE', 'admin/structure/rate/%/template');
 define('RATE_PATH_AHAH', 'rate/vote/js');
-define('RATE_PATH_RESULTS_PAGE', 'node/%node/results');
+define('RATE_PATH_RESULTS_PAGE', 'node/%node/rating');
 define('RATE_PATH_LOGIN_PAGE', 'user/login-to-rate');
 
 // Define constants for variable names.
@@ -855,8 +855,6 @@ function rate_views_widget_compact_disabled($value, $field, $columns) {
 }
 
 /**
-<<<<<<< HEAD
-=======
  * Get a token for the voting button.
  *
  * This is a wrapper around drupal_get_token() to make this compatible with
@@ -902,7 +900,6 @@ function _rate_check_widget(&$widget) {
 }
 
 /**
->>>>>>> 84509eb... by mauritsl: Add display mode (full, compact etc.) for full node views, teasers and comments.
  * Implements hook_theme().
  */
 function rate_theme() {
