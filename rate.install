@@ -48,7 +48,7 @@ function _rate_update_templates_data() {
 }
 
 /**
- * Implements hook_update_N().
+ * Rename helpful template to yesno.
  */
 function rate_update_6000() {
   $widgets = variable_get('rate_widgets', array());
@@ -65,7 +65,7 @@ function rate_update_6000() {
 }
 
 /**
- * Implements hook_update_N().
+ * Update paths to JS and CSS files.
  */
 function rate_update_6001() {
   _rate_update_templates_data();
