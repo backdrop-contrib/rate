@@ -1013,7 +1013,7 @@ function rate_preprocess_rate_widget(&$variables) {
     $info[] = t('Voting is closed.');
   }
   if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
-    if ($results['user_vote']) {
+    if (isset($results['user_vote'])) {
       $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
     }
   }
@@ -1039,7 +1039,7 @@ function rate_preprocess_rate_template_emotion(&$variables) {
     $info[] = t('Voting is closed.');
   }
   if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
-    if ($results['user_vote']) {
+    if (isset($results['user_vote'])) {
       $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
     }
   }
@@ -1128,7 +1128,7 @@ function rate_preprocess_rate_template_thumbs_up(&$variables) {
     $info[] = t('Voting is closed.');
   }
   if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
-    if ($results['user_vote']) {
+    if (isset($results['user_vote'])) {
       $info[] = format_plural($results['count'], 'Only you voted.', '@count users have voted, including you.');
     }
     else {
@@ -1157,7 +1157,7 @@ function rate_preprocess_rate_template_yesno(&$variables) {
     $info[] = t('Voting is closed.');
   }
   if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
-    if ($results['user_vote']) {
+    if (isset($results['user_vote'])) {
       $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
     }
   }
