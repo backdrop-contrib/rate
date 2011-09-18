@@ -371,10 +371,8 @@ function _rate_check_permissions($widget, $node = NULL) {
   isset($widget->allow_voting_by_author) or $widget->allow_voting_by_author = TRUE;
 
   if (!$widget->allow_voting_by_author) {
-    if ($user->uid == 0) {
-      return RATE_PERMISSION_DISALLOWED_ROLE;
-    }
-    if ($node && $node->uid == $user->uid) {
+    // This option only affects authenticated users.
+    if ($node && $user->uid && $node->uid == $user->uid) {
       return RATE_PERMISSION_DISALLOWED_AUTHOR;
     }
   }
