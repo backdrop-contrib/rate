@@ -14,7 +14,7 @@
   display: block;
   float: left;
 }
-a.rate-yesno-btn {
+.rate-yesno-btn {
   display: inline-block;
   background: #eee;
   border: #ccc;
@@ -24,7 +24,7 @@ a.rate-yesno-btn {
   border: 1px solid #ccc;
 }
 
-a.rate-yesno-btn:hover {
+.rate-yesno-btn:hover {
   background: #ddd;
   text-decoration: none;
 }

@@ -14,7 +14,7 @@
   display: block;
   float: left;
 }
-a.rate-emotion-btn {
+.rate-emotion-btn {
   display: inline-block;
   background: #eee;
   border: #ccc;
@@ -24,7 +24,7 @@ a.rate-emotion-btn {
   border: 1px solid #ccc;
 }
 
-a.rate-emotion-btn:hover {
+.rate-emotion-btn:hover {
   background: #ddd;
   text-decoration: none;
 }
