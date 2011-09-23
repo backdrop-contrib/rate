@@ -38,7 +38,13 @@
  * - $info: String with user readable information (built in preprocess function).
  */
 ?>
+
 <?php print theme('item_list', $buttons); ?>
+
 <?php if ($info): ?>
   <?php print '<div class="rate-info">' . $info . '</div>'; ?>
+<?php endif; ?>
+
+<?php if ($display_options['description']): ?>
+  <?php print '<div class="rate-description">' . $display_options['description'] . '</div>'; ?>
 <?php endif; ?>

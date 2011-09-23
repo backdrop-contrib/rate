@@ -36,7 +36,7 @@ function rate_slider_rate_templates() {
 function rate_slider_theme() {
   return array(
     'rate_template_slider' => array(
-      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
+      'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'slider',
       'path' => drupal_get_path('module', 'rate_slider') . '/templates/slider',
     ),

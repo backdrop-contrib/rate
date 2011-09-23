@@ -152,6 +152,8 @@ function rate_widget_form(&$form_state, $id = NULL) {
     $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
     $widget->displayed = RATE_AVERAGE;
     $widget->displayed_just_voted = RATE_USER;
+    $widget->description = '';
+    $widget->description_in_compact = TRUE;
   }
 
   // Determine the template from GET (which is only available before the form
@@ -420,6 +422,17 @@ function rate_widget_form(&$form_state, $id = NULL) {
     '#options' => $display_mode_options,
     '#default_value' => $widget->comment_display_mode,
   );
+  $form['display']['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Description'),
+    '#default_value' => $widget->description,
+    '#description' => t('Optional description which will be visible on the rate widget.'),
+  );
+  $form['display']['description_in_compact'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display in compact mode'),
+    '#default_value' => $widget->description_in_compact,
+  );
 
   $form['interaction'] = array(
     '#type' => 'fieldset',
@@ -570,6 +583,8 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->noperm_behaviour = $form_state['values']['noperm_behaviour'];
   $widget->displayed = $form_state['values']['displayed'];
   $widget->displayed_just_voted = $form_state['values']['displayed_just_voted'];
+  $widget->description = $form_state['values']['description'];
+  $widget->description_in_compact = (bool) $form_state['values']['description_in_compact'];
   
   if ($widget->template != 'custom') {
     // Take over the values from the template.
