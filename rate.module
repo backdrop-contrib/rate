@@ -319,7 +319,15 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     $widget->mode = $mode == RATE_DISABLED ? RATE_DISABLED : RATE_COMPACT_DISABLED;
   }
 
-  $widget_html = theme($theme, array('links' => $links, 'results' => $results, 'mode' => $widget->mode, 'just_voted' => $just_voted, 'content_type' => $content_type, 'content_id' => $content_id));
+  $display_options = array(
+    'description' => '',
+  );
+  if (($widget->mode != RATE_COMPACT && $widget->mode != RATE_COMPACT_DISABLED) || $widget->description_in_compact) {
+    $display_options['description'] = check_plain($widget->description);
+  }
+
+  $widget_html = theme($theme, array('links' => $links, 'results' => $results, 'mode' => $widget->mode, 'just_voted' => $just_voted, 'content_type' => $content_type, 'content_id' => $content_id, 'display_options' => $display_options));
+
   if ($include_div) {
     $classes = array('rate-widget-' . $widget_id, 'rate-widget', 'clear-block');
     $classes[] = $displayed == RATE_AVERAGE ? 'rate-average' : 'rate-user';
@@ -903,6 +911,8 @@ function _rate_check_widget(&$widget) {
   isset($widget->displayed_just_voted) or $widget->displayed_just_voted = RATE_USER;
   isset($widget->template) or $widget->template = 'custom';
   isset($widget->customizable) or $widget->customizable = TRUE;
+  isset($widget->description) or $widget->description = '';
+  isset($widget->description_in_compact) or $widget->description_in_compact = TRUE;
 }
 
 /**
@@ -912,7 +922,7 @@ function rate_theme() {
   return array(
     'rate_widget' => array(
       'pattern' => 'rate_widget__',
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'rate-widget',
     ),
     'rate_button' => array(
@@ -929,27 +939,27 @@ function rate_theme() {
     ),
     // Templates for default widget types.
     'rate_template_thumbs_up' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'thumbs-up',
       'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up',
     ),
     'rate_template_thumbs_up_down' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'thumbs-up-down',
       'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up-down',
     ),
     'rate_template_fivestar' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'fivestar',
       'path' => drupal_get_path('module', 'rate') . '/templates/fivestar',
     ),
     'rate_template_emotion' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'emotion',
       'path' => drupal_get_path('module', 'rate') . '/templates/emotion',
     ),
     'rate_template_yesno' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL),
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'yesno',
       'path' => drupal_get_path('module', 'rate') . '/templates/yesno',
     ),

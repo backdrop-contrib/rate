@@ -101,6 +101,9 @@ use, these are "Value type", "Options" and "Translate options".
 * Comment display
   Same as node display, but for comments.
 * Display mode when displayed for comments.
+* Description
+  This is an optional description which is displayed under the rate widget.
+* Display description in compact mode
 * Which rating should be displayed?
   Determines which rating to display. Options are:
   * Average rating: Always display the average rating.
