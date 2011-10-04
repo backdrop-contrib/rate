@@ -51,10 +51,6 @@ define('RATE_PERMISSION_DISALLOWED_AUTHOR', 3);
  */
 function rate_permission() {
   return array(
-    'administer rate' => array(
-      'title' => t('Administer rate module'),
-      'description' => t('Perform Administration tasks for rate module.'),
-    ),
     'view rate results page' => array(
       'title' => t('View rate results page'),
       'description' => t('View rate results page'),
@@ -72,7 +68,7 @@ function rate_menu() {
     'title' => 'Rate widgets',
     'description' => 'Manage rating widgets.',
     'page callback' => 'rate_admin_page',
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'rate.admin.inc',
   );
@@ -80,7 +76,7 @@ function rate_menu() {
   $menu[RATE_PATH_ADMIN_PAGE_LIST] = array(
     'title' => 'List',
     'page callback' => 'rate_admin_page',
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'file' => 'rate.admin.inc',
     'weight' => 0,
@@ -90,7 +86,7 @@ function rate_menu() {
     'title' => 'Add widget',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_form'),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
   'weight' => 1,
@@ -100,7 +96,7 @@ function rate_menu() {
     'title' => 'Edit widget',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_form', 3),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
   );
@@ -109,7 +105,7 @@ function rate_menu() {
     'title' => 'Delete widget',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_delete_form', 3),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
   );
@@ -118,7 +114,7 @@ function rate_menu() {
     'title' => 'Switch template',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_choose_template_form', 3),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
   );
@@ -334,6 +330,10 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     if (!empty($widget->template)) {
       $classes[] = 'rate-widget-' . $widget->template;
     }
+    // This token is required for the AHAH callback when using arbitrary values.
+    $id = "rate-$widget_id-$content_type-$content_id";
+    $token = _rate_get_token($id);
+    $classes[] = 'rate-' . $token;
     return
       '<div class="' . implode(' ', $classes) . '" id="' . $div_id . '">' .
       $widget_html .
@@ -653,7 +653,7 @@ function rate_comment_view_alter(&$comment) {
  * AHAH callback for the vote buttons.
  */
 function rate_vote_ahah() {
-  $content_type = $_GET['content_type'];
+  $content_type = preg_replace('/[^\\w\\-]/', '', $_GET['content_type']);
   $content_id = (int) $_GET['content_id'];
   $widget_id = (int) $_GET['widget_id'];
   $widget_mode = (int) $_GET['widget_mode'];
@@ -673,8 +673,11 @@ function rate_vote_ahah() {
 
   // Process arbitrary value, used for sliders.
   if (isset($_GET['value']) && $widget->value_type == 'percent') {
+    // Validate the token against the general widget token (found in the widget classes).
+    $id = "rate-$widget_id-$content_type-$content_id";
+    $token = _rate_get_token($id);
     $value = (int) $_GET['value'];
-    if ($value >= 0 && $value <= 100) {
+    if (isset($_GET['token']) && $_GET['token'] == $token && $value >= 0 && $value <= 100) {
       rate_save_vote($widget, $content_type, $content_id, $value, TRUE);
     }
   }
@@ -1139,10 +1142,12 @@ function rate_preprocess_rate_template_number_up_down(&$variables) {
   if ($results['rating'] > 0) {
     $score = '+' . $results['rating'];
     $score_class = 'positive';
-  } elseif ($results['rating'] < 0) {
+  }
+  elseif ($results['rating'] < 0) {
     $score = $results['rating'];
     $score_class = 'negative';
-  } else {
+  }
+  else {
     $score = 0;
     $score_class = 'neutral';
   }

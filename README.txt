@@ -29,6 +29,9 @@ Copy Rate into your modules directory (i.e. sites/all/modules) and enable Rate
 
 Optional modules:
 
+* Chart
+  To view the charts in the vote results tab, you also need to install the "chart"
+  module, which you can get at http://drupal.org/project/chart.
 * Date
   The date module is a requirement for the Rate Expiration module.
 
@@ -173,9 +176,10 @@ are provided by the rate module:
 
 * Thumbs up
 * Thumbs up / down
+* Number up / down
 * Fivestar
 * Emotion
-* Was this helpful?
+* Yes / no
 
 4. Theming
 --------------------------------------------------------------------------------
@@ -254,6 +258,10 @@ clicking the "Voting results" tab on the node page. Note that this tab is hidden
 if the node does not have any rate widgets or if you do not have the
 "view rate results" permission.
 
+When the chart module is enabled, you will find charts of the results in the
+last 30 days on this page. The chart may show less than 30 days if there was no
+activity on all days.
+
 The voting results page is only available for nodes.
 
 6. Views integration
@@ -316,6 +324,8 @@ print rate_embed($node, 'NAME', RATE_CLOSED);
 
 9. Hooks
 --------------------------------------------------------------------------------
+Hooks for modules are documented in rate.hooks.inc.
+
 There are two Javascript hooks available; eventBeforeRate and eventAfterRate.
 This hook has an argument 'data'. This is an object which contains the variables
 'content_type', 'content_id', 'widget_id' and 'widget_mode'. Example of use:
