@@ -729,6 +729,18 @@ function rate_rate_templates() {
   $templates['thumbs_up_down']->translate = TRUE;
   $templates['thumbs_up_down']->template_title = t('Thumbs up / down');
 
+  $templates['number_up_down'] = new stdClass();
+  $templates['number_up_down']->value_type = 'points';
+  $templates['number_up_down']->options = array(
+    array(1, '+1'),
+    array(-1, '-1'),
+  );
+  $templates['number_up_down']->theme = 'rate_template_number_up_down';
+  $templates['number_up_down']->css = drupal_get_path('module', 'rate') . '/templates/number-up-down/number-up-down.css';
+  $templates['number_up_down']->customizable = FALSE;
+  $templates['number_up_down']->translate = TRUE;
+  $templates['number_up_down']->template_title = t('Number up / down');
+
   $templates['fivestar'] = new stdClass();
   $templates['fivestar']->value_type = 'percent';
   $templates['fivestar']->options = array(
@@ -956,6 +968,11 @@ function rate_theme() {
       'template' => 'thumbs-up-down',
       'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up-down',
     ),
+    'rate_template_number_up_down' => array(
+      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'template' => 'number-up-down',
+      'path' => drupal_get_path('module', 'rate') . '/templates/number-up-down',
+    ),
     'rate_template_fivestar' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'fivestar',
@@ -1085,6 +1102,52 @@ function rate_preprocess_rate_template_thumbs_up_down(&$variables) {
 
   $variables['up_button'] = theme('rate_button', array('text' => $links[0]['text'], 'href' => $links[0]['href'], 'class' => $up_classes));
   $variables['down_button'] = theme('rate_button', array('text' => $links[1]['text'], 'href' => $links[1]['href'], 'class' => $down_classes));
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
+    if (isset($results['user_vote'])) {
+      $info[] = t('You voted \'@option\'.', array('@option' => $results['user_vote'] == 1 ? $links[0]['text'] : $links[1]['text']));
+    }
+  }
+  $variables['info'] = implode(' ', $info);
+}
+
+/**
+ * Preprocess function for the number_up_down template.
+ */
+function rate_preprocess_rate_template_number_up_down(&$variables) {
+  extract($variables);
+
+  $up_classes = 'rate-number-up-down-btn-up';
+  $down_classes = 'rate-number-up-down-btn-down';
+  if (isset($results['user_vote'])) {
+    switch ($results['user_vote']) {
+      case $links[0]['value']:
+        $up_classes .= ' rate-voted';
+        break;
+      case $links[1]['value']:
+        $down_classes .= ' rate-voted';
+        break;
+    }
+  }
+
+  $variables['up_button'] = theme('rate_button', array('text' => $links[0]['text'], 'href' => $links[0]['href'], 'class' => $up_classes));
+  $variables['down_button'] = theme('rate_button', array('text' => $links[1]['text'], 'href' => $links[1]['href'], 'class' => $down_classes));
+  if ($results['rating'] > 0) {
+    $score = '+' . $results['rating'];
+    $score_class = 'positive';
+  } elseif ($results['rating'] < 0) {
+    $score = $results['rating'];
+    $score_class = 'negative';
+  } else {
+    $score = 0;
+    $score_class = 'neutral';
+  }
+  $variables['score'] = $score;
+  $variables['score_class'] = $score_class;
 
   $info = array();
   if ($mode == RATE_CLOSED) {
