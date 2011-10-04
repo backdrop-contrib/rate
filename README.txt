@@ -176,9 +176,11 @@ are provided by the rate module:
 
 * Thumbs up
 * Thumbs up / down
+* Number up / down
 * Fivestar
 * Emotion
-* Was this helpful?
+* Yes / no
+* Slider
 
 4. Theming
 --------------------------------------------------------------------------------
@@ -302,6 +304,8 @@ The display setting for nodes must be set to "Do not add automatically".
 
 9. Hooks
 --------------------------------------------------------------------------------
+Hooks for modules are documented in rate.hooks.inc.
+
 There are two Javascript hooks available; eventBeforeRate and eventAfterRate.
 This hook has an argument 'data'. This is an object which contains the variables
 'content_type', 'content_id', 'widget_id' and 'widget_mode'. Example of use:
@@ -310,3 +314,4 @@ $(document).bind('eventAfterRate', function(event, data)
 {
   alert('eventAfterRate called');
 });
+

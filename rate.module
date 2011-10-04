@@ -52,20 +52,20 @@ define('RATE_PERMISSION_DISALLOWED_AUTHOR', 3);
  * Implements hook_perm().
  */
 function rate_perm() {
-  return array('administer rate', 'view rate results page');
+  return array('view rate results page');
 }
 
 /**
  * Implements hook_menu().
  */
 function rate_menu() {
-	$menu = array();
+  $menu = array();
 
   $menu[RATE_PATH_ADMIN_PAGE] = array(
     'title' => t('Rate widgets'),
     'description' => t('Manage rating widgets.'),
     'page callback' => 'rate_admin_page',
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'rate.admin.inc',
   );
@@ -73,7 +73,7 @@ function rate_menu() {
   $menu[RATE_PATH_ADMIN_PAGE_LIST] = array(
     'title' => t('List'),
     'page callback' => 'rate_admin_page',
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'file' => 'rate.admin.inc',
     'weight' => 0,
@@ -83,7 +83,7 @@ function rate_menu() {
     'title' => t('Add widget'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_form'),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
     'weight' => 1,
@@ -93,7 +93,7 @@ function rate_menu() {
     'title' => t('Edit widget'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_form', 3),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
   );
@@ -102,7 +102,7 @@ function rate_menu() {
     'title' => t('Delete widget'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_widget_delete_form', 3),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
   );
@@ -111,23 +111,23 @@ function rate_menu() {
     'title' => t('Switch template'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rate_choose_template_form', 3),
-    'access arguments' => array('administer rate'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
   );
 
-	$menu[RATE_PATH_ADMIN_AHAH] = array(
-		'page callback' => 'rate_widget_form_ahah',
-		'access arguments' => array('administer rate'),
-		'type' => MENU_CALLBACK,
+  $menu[RATE_PATH_ADMIN_AHAH] = array(
+    'page callback' => 'rate_widget_form_ahah',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
-	);
+  );
 
-	$menu[RATE_PATH_AHAH] = array(
-		'page callback' => 'rate_vote_ahah',
-		'access arguments' => array('access content'),
-		'type' => MENU_CALLBACK
-	);
+  $menu[RATE_PATH_AHAH] = array(
+    'page callback' => 'rate_vote_ahah',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK
+  );
 
   $menu[RATE_PATH_RESULTS_PAGE] = array(
     'title' => t('Voting results'),
@@ -140,7 +140,7 @@ function rate_menu() {
     'file' => 'rate.results.inc',
   );
 
-	return $menu;
+  return $menu;
 }
 
 /**
@@ -329,6 +329,10 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     if (!empty($widget->template)) {
       $classes[] = 'rate-widget-' . $widget->template;
     }
+    // This token is required for the AHAH callback when using arbitrary values.
+    $id = "rate-$widget_id-$content_type-$content_id";
+    $token = _rate_get_token($id);
+    $classes[] = 'rate-' . $token;
     return
       '<div class="' . implode(' ', $classes) . '" id="' . $div_id . '">' .
       $widget_html .
@@ -451,7 +455,8 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     if ($output['count'] == 0) {
       // If no one voted its 50-50
       $output['up_percent'] = 50;
-    } else {
+    }
+    else {
       $output['up_percent'] = (int) (($output['up'] * 100) / $output['count']);
     }
     $output['down_percent'] = 100 - $output['up_percent'];
@@ -580,8 +585,8 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
  * Implements hook_nodeapi().
  */
 function rate_nodeapi(&$node, $op, $a3, $a4) {
-	// Adding the form to the node view
-	if ($op == 'view') {
+  // Adding the form to the node view
+  if ($op == 'view') {
     $widgets = rate_get_active_widgets('node', $node->type, $a3);
     foreach ($widgets as $widget_id => $widget) {
       $widget_name = 'rate_' . $widget->name;
@@ -599,15 +604,15 @@ function rate_nodeapi(&$node, $op, $a3, $a4) {
         $node->content[$widget_name] = $widget_code;
       }
     }
-	}
+  }
 }
 
 /**
  * Implements hook_comment().
  */
 function rate_comment(&$comment, $op) {
-	// Adding the form to the node view
-	if ($op == 'view') {
+  // Adding the form to the node view
+  if ($op == 'view') {
     $node = node_load($comment->nid);
     $widgets = rate_get_active_widgets('comment', $node->type);
     foreach ($widgets as $widget_id => $widget) {
@@ -626,7 +631,7 @@ function rate_comment(&$comment, $op) {
           break;
       }
     }
-	}
+  }
 }
 
 /**
@@ -654,7 +659,7 @@ function rate_link($type, $object, $teaser = FALSE) {
 
   // Adding widget to comment links
   if ($type == 'comment') {
-  	$node = node_load($object->nid);
+    $node = node_load($object->nid);
     $widgets = rate_get_active_widgets('comment', $node->type);
     foreach ($widgets as $widget_id => $widget) {
       _rate_check_widget($widget);
@@ -676,7 +681,7 @@ function rate_link($type, $object, $teaser = FALSE) {
  * AHAH callback for the vote buttons.
  */
 function rate_vote_ahah() {
-  $content_type = $_GET['content_type'];
+  $content_type = preg_replace('/[^\\w\\-]/', '', $_GET['content_type']);
   $content_id = (int) $_GET['content_id'];
   $widget_id = (int) $_GET['widget_id'];
   $widget_mode = (int) $_GET['widget_mode'];
@@ -696,8 +701,11 @@ function rate_vote_ahah() {
 
   // Process arbitrary value, used for sliders.
   if (isset($_GET['value']) && $widget->value_type == 'percent') {
+    // Validate the token against the general widget token (found in the widget classes).
+    $id = "rate-$widget_id-$content_type-$content_id";
+    $token = _rate_get_token($id);
     $value = (int) $_GET['value'];
-    if ($value >= 0 && $value <= 100) {
+    if (isset($_GET['token']) && $_GET['token'] == $token && $value >= 0 && $value <= 100) {
       rate_save_vote($widget, $content_type, $content_id, $value, TRUE);
     }
   }
@@ -1163,10 +1171,12 @@ function rate_preprocess_rate_template_number_up_down(&$variables) {
   if ($results['rating'] > 0) {
     $score = '+' . $results['rating'];
     $score_class = 'positive';
-  } elseif ($results['rating'] < 0) {
+  }
+  elseif ($results['rating'] < 0) {
     $score = $results['rating'];
     $score_class = 'negative';
-  } else {
+  }
+  else {
     $score = 0;
     $score_class = 'neutral';
   }

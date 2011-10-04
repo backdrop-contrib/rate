@@ -2,13 +2,15 @@ Drupal.behaviors.RateSlider = function(context) {
   $('.rate-widget-slider:not(.rate-slider-processed)',context).addClass('rate-slider-processed').each(function() {
     var widget = $(this);
     var ids = widget.attr('id').match(/^rate\-([a-z]+)\-([0-9]+)\-([0-9]+)\-([0-9])$/);
+    var token = widget.attr('class').match(/rate\-([0-9a-f]{32})/);
+    
     var data = {
       content_type: ids[1],
       content_id: ids[2],
       widget_id: ids[3],
       widget_mode: ids[4]
     };
-
+    
     var s = $(".rate-slider", widget);
     var v = $(s).attr("class").match(/rate\-value\-([0-9]+)/)[1];
     
@@ -31,7 +33,7 @@ Drupal.behaviors.RateSlider = function(context) {
         },
         stop: function(event,ui) {
           data.value = ui.value;
-          return Drupal.rateVote(widget, data, '');
+          return Drupal.rateVote(widget, data, token[1]);
         }
       });
     }

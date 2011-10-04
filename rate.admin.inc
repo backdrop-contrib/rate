@@ -131,7 +131,8 @@ function rate_widget_form(&$form_state, $id = NULL) {
       module_invoke_all('exit') & exit;
     }
     $widget = $widgets[$id];
-  } else {
+  }
+  else {
     $widget = new stdClass();
     $widget->name = '';
     $widget->tag = 'vote';
@@ -272,7 +273,8 @@ function rate_widget_form(&$form_state, $id = NULL) {
       if ($form_state['clicked_button']['#id'] == 'edit-add-another') {
         ++$option_count;
       }
-    } else {
+    }
+    else {
       $option_count = max(2, count($widget->options));
     }
 
