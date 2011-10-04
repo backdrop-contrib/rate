@@ -1290,3 +1290,30 @@ function rate_login_page() {
   module_load_include('inc', 'user', 'user.pages');
   return user_page();
 }
+
+/**
+ * Implements hook_votingapi_metadata_alter().
+ *
+ * Make tags and option value type visible to VotingAPI.
+ * 
+ * @see votingapi_metadata()
+ */
+function rate_votingapi_metadata_alter(&$data) {
+  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  foreach ($widgets as $widget) {
+    if (isset($data['tags'][$widget->tag])) {
+      continue;
+    }
+    $data['tags'][$widget->tag] = array(
+      'name' => $widget->tag,
+      'description' => t('Tag used for %name Rate widget', array('%name' => $widget->title)),
+    );
+  }
+
+  if (!isset($data['value_types']['option'])) {
+    $data['value_types']['option'] = array(
+      'name' => t('Options'),
+      'description' => t('Votes that are counted per option without meaningful average.'),
+    );
+  }
+}
