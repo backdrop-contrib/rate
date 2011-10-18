@@ -552,6 +552,8 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     'value' => $value,
     'tag' => $widget->tag,
   );
+  
+  $criteria = NULL;
 
   // Call hook_rate_vote_alter().
   $redirect = FALSE;
@@ -559,6 +561,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   $context = array(
     'redirect' => &$redirect,
     'save' => &$save,
+    'criteria' => &$criteria,
     'widget' => $widget,
   );
   drupal_alter('rate_vote', $votes, $context);
