@@ -25,7 +25,7 @@ the latest stable version at http://drupal.org/project/votingapi
 Please follow the readme file provided by VotingAPI on how to install.
 
 Copy Rate into your modules directory (i.e. sites/all/modules) and enable Rate
-(on admin/build/modules).
+(on admin/modules).
 
 Optional modules:
 
@@ -38,7 +38,7 @@ Optional modules:
 2. Configuration
 --------------------------------------------------------------------------------
 After installation, the configuration page will be available at
-admin/build/rate. This page shows a list with available widgets. Each widget
+admin/structure/rate. This page shows a list with available widgets. Each widget
 have an edit and delete link. You can add a tab on the form below 'Add widget'.
 In this form you have to choose a widget type. See section 3 for more
 information on this topic. Both editing and adding a widget leads to the widget
