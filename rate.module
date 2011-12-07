@@ -567,7 +567,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   drupal_alter('rate_vote', $votes, $context);
   
   if ($save) {
-    votingapi_set_votes($votes);
+    votingapi_set_votes($votes, $criteria);
   }
   if ($redirect) {
     preg_match('/^(.+?)(\\?(.*?))?(\\#(.*))?$/', $redirect, $parts);
