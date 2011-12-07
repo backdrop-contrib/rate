@@ -759,7 +759,7 @@ function rate_rate_templates() {
   $templates['fivestar']->theme = 'rate_template_fivestar';
   $templates['fivestar']->css = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.css';
   $templates['fivestar']->js = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.js';
-  $templates['fivestar']->customizable = FALSE;
+  $templates['fivestar']->customizable = TRUE;
   $templates['fivestar']->translate = FALSE;
   $templates['fivestar']->template_title = t('Fivestar');
 
@@ -1002,14 +1002,14 @@ function rate_theme() {
  */
 function rate_preprocess_rate_widget(&$variables) {
   extract($variables);
-
+  
   $buttons = array();
   foreach ($links as $link) {
     $classes = 'rate-btn';
     if (isset($results['user_vote']) && $results['user_vote'] == $link['value']) {
       $classes .= ' user-voted';
     }
-    $button = theme('rate_button', $link['text'], $link['href'], $classes);
+    $button = theme('rate_button', array('text' => $link['text'], 'href' => $link['href'], 'class' => $classes));
     $buttons[] = $button;
   }
   $variables['buttons'] = $buttons;
@@ -1242,7 +1242,7 @@ function theme_rate_button($variables) {
       '</span>';
   }
   else {
-    return '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '">' .
+    return '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '" title="' . check_plain($text) . '">' .
       check_plain($text) .
       '</a>';
   }
