@@ -627,8 +627,8 @@ function rate_widget_form_submit($form, &$form_state) {
   }
 
   // Let other modules alter the rate widget.
-  $hook = 'rate_widget' . empty($form['#widget_id']) ? 'insert' : 'update';
-  drupal_alter($hook, $widget, $form_state['values']);
+  $hook = 'rate_widget_' . (empty($form['#widget_id']) ? 'insert' : 'update');
+  module_invoke_all($hook, $widget, $form_state['values']);
 
   // Save the widget.
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
