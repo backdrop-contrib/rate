@@ -468,7 +468,7 @@ function rate_get_results($content_type, $content_id, $widget_id) {
 
   $criteria += array('uid' => $user->uid, 'value_type' => $widget->value_type);
   if (!$user->uid) {
-    $criteria += array('vote_source' => $_SERVER['REMOTE_ADDR']);
+    $criteria += array('vote_source' => ip_address());
   }
   if ($user_vote = votingapi_select_votes($criteria)) {
     // Check the anonymous window. We should not display this vote when its anonymous and casted too long ago.
