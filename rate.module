@@ -873,7 +873,7 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
   // Loop through all the widgets and search for a suitable widget to display.
   $widgets = variable_get(RATE_VAR_WIDGETS, array());
   foreach ($widgets as $widget_id => $widget) {
-    if ($tag == $widget->tag && $value_type == $widget->value_type && in_array($node_type, $widget->node_types)) {
+    if ((!isset($tag) || $tag == $widget->tag) && (!isset($value_type) || $value_type == $widget->value_type) && in_array($node_type, $widget->node_types)) {
       return rate_generate_widget($widget_id, $content_type, $content_id, $mode, TRUE, FALSE, $displayed_rating);
     }
   }
