@@ -518,12 +518,15 @@ function rate_get_results($content_type, $content_id, $widget_id) {
  * @param string $content_type
  * @param int $content_id
  * @param int $value
+ * @param bool $ahah
+ * @param bool $reset
  */
-function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FALSE) {
+function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FALSE, $reset = FALSE) {
   // Prevent votes from saved twice. This does not check for different widgets /
-  // content id's, but it's only possible to save a single vote per request for now.
+  // content id's, but it's only possible to save a single vote per request for now,
+  // unless one uses the $reset flag with a TRUE value
   static $saved = FALSE;
-  if ($saved) {
+  if ($saved && !$reset) {
     return;
   }
   $saved = TRUE;
