@@ -541,9 +541,11 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
       case RATE_NOPERM_REDIRECT_WITH_MESSAGE:
         // Redirects via AHAH have a destination param to prevent redirecting to the AJAX callback.
         $destination = isset($_GET['destination']) ? $_GET['destination'] : $_GET['q'];
+
         // Strip off protocol domain name to prevent long query strings in URL.
         $destination = preg_replace('/http:\\/\\/[^\\/]+\\//', '', $destination);
         $query = array('destination' => $destination);
+
         if ($ahah) {
           print url('user/login-to-rate', array('query' => $query, 'absolute' => TRUE));
           module_invoke_all('exit') & exit;
@@ -551,9 +553,12 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
         else {
           drupal_goto('user/login-to-rate', array('query' => $query));
         }
+
         break;
+
       case RATE_NOPERM_REDIRECT_WITHOUT_MESSAGE:
         $query = array('destination' => $_GET['q']);
+
         if ($ahah) {
           print url('user', array('query' => $query, 'absolute' => TRUE));
           module_invoke_all('exit') & exit;
@@ -561,7 +566,9 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
         else {
           drupal_goto('user', array('query' => $query));
         }
+
         break;
+
       default:
         return;
     }
@@ -591,22 +598,88 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   if ($save) {
     votingapi_set_votes($votes, $criteria);
   }
+
   if ($redirect) {
     preg_match('/^(.+?)(\\?(.*?))?(\\#(.*))?$/', $redirect, $parts);
     $path = $parts[1];
+
     if (isset($parts[3])) {
       parse_str($parts[3], $query);
     }
     else {
       $query = array();
     }
+
     $fragment = isset($parts[5]) ? $parts[5] : '';
+
     if ($ahah) {
       print url($path, array('absolute' => TRUE, 'query' => $query, 'fragment' => $fragment));
       module_invoke_all('exit') & exit;
     }
     else {
       drupal_goto($path, $query, $fragment);
+    }
+  }
+}
+
+/*
+  Delete same up/down vote on second click
+  -----------------------------------------
+  Check to see if the vote already exists.
+  We also check to see if this feature is enabled.
+
+  If it exists and this feature is enabled then,
+  delete it and disable the saving of a new one.
+*/
+function rate_rate_vote_alter($votes, &$context) {
+  // Make sure that this feature is enabled for the widget.
+  if (!$context['widget']->delete_vote_on_second_click) {
+    return;
+  }
+
+  $criteria = $context['criteria'];
+
+  // This might create problems for other modules doing this so soon.
+  // Which is why I don't pass in the $votes variable by reference,
+  // so that it doesn't get changed before other hooks get to run.
+  if (!empty($votes['entity_id'])) {
+    $votes = array($votes);
+  }
+  
+  // Handle clearing out old votes if they exists.
+  if (empty($criteria)) {
+    // If the calling function didn't explicitly set criteria for vote deletion,
+    // build up the delete queries here.
+    foreach ($votes as $vote) {
+      $tmp = votingapi_current_user_identifier();
+      $tmp += $vote;
+      $tmp_v = votingapi_select_votes($tmp);
+
+      if (!empty($tmp_v)) {
+        votingapi_delete_votes($tmp_v);
+        $context['save'] = FALSE;
+
+        // We have to recalculate all the results for it.
+        votingapi_recalculate_results($vote['entity_type'], $vote['entity_id']);
+      }
+    }
+  }
+  elseif (is_array($criteria)) {
+    // The calling function passed in an explicit set of delete filters.
+    if (!empty($criteria['entity_id'])) {
+      $criteria = array($criteria);
+    }
+
+    foreach ($criteria as $c) {
+      $tmp_v = votingapi_select_votes($c);
+
+      if (!empty($tmp_v)) {
+        votingapi_delete_votes($tmp_v);
+        $context['save'] = FALSE;
+
+        // We have to recalculate all the results for it.
+        votingapi_recalculate_results($c['entity_type'], $c['entity_id']);
+      }
     }
   }
 }
@@ -691,6 +764,7 @@ function rate_vote_ahah() {
     // This name must be unique for all submit buttons across the page, AHAH will fail otherwise.
     $id = "opt-$widget_id-$content_type-$content_id-{$option[0]}";
     $token = rate_get_token($id);
+
     if (isset($_GET['token']) && $_GET['token'] == $token) {
       rate_save_vote($widget, $content_type, $content_id, $option[0], TRUE);
     }
@@ -702,6 +776,7 @@ function rate_vote_ahah() {
     $id = "rate-$widget_id-$content_type-$content_id";
     $token = _rate_get_token($id);
     $value = (int) $_GET['value'];
+
     if (isset($_GET['token']) && $_GET['token'] == $token && $value >= 0 && $value <= 100) {
       rate_save_vote($widget, $content_type, $content_id, $value, TRUE);
     }

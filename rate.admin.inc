@@ -152,6 +152,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     $widget->displayed_just_voted = RATE_USER;
     $widget->description = '';
     $widget->description_in_compact = TRUE;
+    $widget->delete_vote_on_second_click = 0;
   }
   
   // Determine the template from GET (which is only available before the form
@@ -449,11 +450,24 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     RATE_AVERAGE => t('Average rating'),
     RATE_USER => t('Users vote'),
   );
+
   $form['interaction']['displayed_just_voted'] = array(
     '#type' => 'radios',
     '#title' => t('Which rating should be displayed when the user just voted?'),
     '#options' => $options,
     '#default_value' => $widget->displayed_just_voted,
+  );
+
+  $click_options = array(
+    0 => t('No'),
+    1 => t('Yes'),
+  );
+  $form['interaction']['delete_vote_on_second_click'] = array(
+    '#type' => 'radios',
+    '#title' => t('Should a second click on the same button delete the vote?'),
+    '#options' => $click_options,
+    '#default_value' => $widget->delete_vote_on_second_click,
+    '#description' => t('Example: the Facebook "Like" button.'),
   );
 
   $form['permissions'] = array(
@@ -586,6 +600,7 @@ function rate_widget_form_submit($form, &$form_state) {
   $widget->displayed_just_voted = $form_state['values']['displayed_just_voted'];
   $widget->description = $form_state['values']['description'];
   $widget->description_in_compact = (bool) $form_state['values']['description_in_compact'];
+  $widget->delete_vote_on_second_click = $form_state['values']['delete_vote_on_second_click'];
   
   if ($widget->template != 'custom') {
     // Take over the values from the template.
