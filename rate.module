@@ -218,10 +218,10 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     return NULL;
   }
   elseif ($permission_status == RATE_PERMISSION_DISALLOWED_ROLE && $widget->noperm_behaviour == RATE_NOPERM_SHOW_DISABLED_WIDGET) {
-    $mode = RATE_DISABLED;
+    $mode = ($mode == RATE_COMPACT) ? RATE_COMPACT_DISABLED : RATE_DISABLED;
   }
   elseif ($permission_status == RATE_PERMISSION_DISALLOWED_AUTHOR) {
-    $mode = RATE_DISABLED;
+    $mode = ($mode == RATE_COMPACT) ? RATE_COMPACT_DISABLED : RATE_DISABLED;
   }
 
   // Store the display mode in $widget, so it can be altered by hook_rate_widget.
