@@ -21,7 +21,7 @@
 
   Drupal.rateVote = function(widget, data, token) {
     // Invoke JavaScript hook.
-    $.event.trigger('eventBeforeRate', [data]);
+    widget.trigger('eventBeforeRate', [data]);
 
     $(".rate-info", widget).text(Drupal.t('Saving vote...'));
 
@@ -43,7 +43,7 @@
         var p = widget.parent();
 
         // Invoke JavaScript hook.
-        $.event.trigger('eventAfterRate', [data]);
+        widget.trigger('eventAfterRate', [data]);
 
         widget.before(data);
 
