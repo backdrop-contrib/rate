@@ -28,12 +28,12 @@
     // Random number to prevent caching, see http://drupal.org/node/1042216#comment-4046618
     var random = Math.floor(Math.random() * 99999);
 
-    var q = '?q=rate%2Fvote%2Fjs&widget_id=' + data.widget_id + '&content_type=' + data.content_type + '&content_id=' + data.content_id + '&widget_mode=' + data.widget_mode + '&token=' + token + '&destination=' + escape(document.location) + '&r=' + random;
+    var q = Drupal.settings.rate.basePath.match(/\?/) ? '&' : '?' + 'widget_id=' + data.widget_id + '&content_type=' + data.content_type + '&content_id=' + data.content_id + '&widget_mode=' + data.widget_mode + '&token=' + token + '&destination=' + encodeURIComponent(Drupal.settings.rate.destination) + '&r=' + random;
     if (data.value) {
       q = q + '&value=' + data.value;
     }
 
-    $.get(Drupal.settings.basePath + q, function(data) {
+    $.get(Drupal.settings.rate.basePath + q, function(data) {
       if (data.match(/^https?\:\/\/[^\/]+\/(.*)$/)) {
         // We got a redirect.
         document.location = data;

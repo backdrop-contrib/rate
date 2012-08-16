@@ -282,8 +282,15 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   }
 
   // Add generic javascript.
+  $dest = drupal_get_destination();
+  drupal_add_js(array(
+    'rate' => array(
+      'basePath' => url('rate/vote/js'),
+      'destination' => $dest['destination'],
+    )
+  ), array('type' => 'setting'));
   drupal_add_js(drupal_get_path('module', 'rate') . '/rate.js');
-  
+
   $links = array();
   foreach ($widget->options as $option) {
     // This name must be unique for all submit buttons across the page.
@@ -555,10 +562,9 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
         }
 
         break;
-
       case RATE_NOPERM_REDIRECT_WITHOUT_MESSAGE:
-        $query = array('destination' => $_GET['q']);
-
+        $destination = isset($_GET['destination']) ? $_GET['destination'] : $_GET['q'];
+        $query = array('destination' => $destination);
         if ($ahah) {
           print url('user', array('query' => $query, 'absolute' => TRUE));
           module_invoke_all('exit') & exit;
@@ -568,7 +574,6 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
         }
 
         break;
-
       default:
         return;
     }
