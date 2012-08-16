@@ -764,3 +764,73 @@ function rate_widget_delete_form_submit($form, &$form_state) {
   }
   $form_state['redirect'] = RATE_PATH_ADMIN_PAGE;
 }
+
+/**
+ * Admin settings form.
+ */
+function rate_settings_form($form, &$form_state) {
+  
+  $form['bot'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Bot detection'),
+    '#description' => t('Bots can be automatically banned from voting if they rate more than a given amount of votes within one minute or hour. This threshold is configurable below. Votes from the same IP-address will be ignored forever after reaching this limit.'),
+    '#collapsbile' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  
+  $options = drupal_map_assoc(array(0, 10, 25, 50, 100, 250, 500, 1000));
+  $options[0] = t('disable');
+  
+  $form['bot'][RATE_VAR_BOT_MINUTE_THRESHOLD] = array(
+    '#type' => 'select',
+    '#title' => t('1 minute threshold'),
+    '#options' => $options,
+    '#default_value' => variable_get(RATE_VAR_BOT_MINUTE_THRESHOLD, 25),
+  );
+  
+  $form['bot'][RATE_VAR_BOT_HOUR_THRESHOLD] = array(
+    '#type' => 'select',
+    '#title' => t('1 hour threshold'),
+    '#options' => $options,
+    '#default_value' => variable_get(RATE_VAR_BOT_HOUR_THRESHOLD, 250),
+  );
+  
+  /* Feature planned for 1.5 release
+  $form['bot'][RATE_VAR_BOT_RETROACTIVE] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Retroactive delete votes'),
+    '#default_value' => variable_get(RATE_VAR_BOT_RETROACTIVE, TRUE),
+    '#description' => t('The bot detection is a retrospective process. When enabled all votes done from the bots IP will be deleted when the bot hits the threshold.'),
+  );
+  */
+  
+  $form['bot'][RATE_VAR_BOT_BOTSCOUT_KEY] = array(
+    '#type' => 'textfield',
+    '#title' => t('BotScout.com API key'),
+    '#default_value' => variable_get(RATE_VAR_BOT_BOTSCOUT_KEY, ''),
+    '#description' => t('Rate will check the voters IP against the BotScout database if it has an API key. You can request a key at %url.', array('%url' => 'http://botscout.com/getkey.htm')),
+  );
+  
+  return system_settings_form($form);
+}
+
+/**
+ * Form validate callback for the settings form.
+ */
+function rate_settings_form_validate($form, &$form_state) {
+  if (!empty($form_state['values'][RATE_VAR_BOT_BOTSCOUT_KEY])) {
+    $url = "http://botscout.com/test/?ip=84.16.230.111&key=" . $form_state['values'][RATE_VAR_BOT_BOTSCOUT_KEY];
+    $data = drupal_http_request($url, array('timeout' => 5));
+    if ($data->code == 200) {
+      if ($data->data{0} == 'Y' || $data->data{0} == 'N') {
+        drupal_set_message(t('Rate has succesfully contacted the BotScout server.'));
+      }
+      else {
+        form_set_error(RATE_VAR_BOT_BOTSCOUT_KEY, t('Invalid API-key.'));
+      }
+    }
+    else {
+      form_set_error(RATE_VAR_BOT_BOTSCOUT_KEY, t('Rate was unable to contact the BotScout server.'));
+    }
+  }
+}

@@ -13,6 +13,47 @@ function rate_uninstall() {
 }
 
 /**
+ * Implements hook_schema().
+ */
+function rate_schema() {
+  $schema = array();
+  
+  $schema['rate_bot_agent'] = array(
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'pattern' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  $schema['rate_bot_ip'] = array(
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'ip' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  return $schema;
+}
+
+/**
  * Update css and js attributes in the widget objects.
  * 
  * This function has to be called when the information from hook_rate_templates() is changed.
@@ -70,4 +111,13 @@ function rate_update_6000() {
 function rate_update_6001() {
   _rate_update_templates_data();
   return array();
+}
+
+/**
+ * Create tables for blacklisting bots.
+ */
+function rate_update_7100() {
+  $schema = drupal_get_schema_unprocessed('rate');
+  db_create_table('rate_bot_agent', $schema['rate_bot_agent']);
+  db_create_table('rate_bot_ip', $schema['rate_bot_ip']);
 }

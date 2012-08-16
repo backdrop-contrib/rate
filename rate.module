@@ -34,12 +34,17 @@ define('RATE_PATH_ADMIN_PAGE_ADD', 'admin/structure/rate/add');
 define('RATE_PATH_ADMIN_PAGE_EDIT', 'admin/structure/rate/%/edit');
 define('RATE_PATH_ADMIN_PAGE_DELETE', 'admin/structure/rate/%/delete');
 define('RATE_PATH_ADMIN_PAGE_TEMPLATE', 'admin/structure/rate/%/template');
+define('RATE_PATH_ADMIN_PAGE_SETTINGS', 'admin/structure/rate/settings');
 define('RATE_PATH_AHAH', 'rate/vote/js');
 define('RATE_PATH_RESULTS_PAGE', 'node/%node/rating');
 define('RATE_PATH_LOGIN_PAGE', 'user/login-to-rate');
 
 // Define constants for variable names.
 define('RATE_VAR_WIDGETS', 'rate_widgets');
+define('RATE_VAR_BOT_MINUTE_THRESHOLD', 'rate_bot_minute_threshold');
+define('RATE_VAR_BOT_HOUR_THRESHOLD', 'rate_bot_hour_threshold');
+define('RATE_VAR_BOT_RETROACTIVE', 'rate_bot_retroactive');
+define('RATE_VAR_BOT_BOTSCOUT_KEY', 'rate_bot_botscout_key');
 
 // Define constants for permission status.
 define('RATE_PERMISSION_OK', 1);
@@ -141,6 +146,15 @@ function rate_menu() {
     'page callback' => 'rate_login_page',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
+  );
+  
+  $menu[RATE_PATH_ADMIN_PAGE_SETTINGS] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rate_settings_form'),
+    'access arguments' => array('administer site settings'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'rate.admin.inc',
   );
 
   return $menu;
@@ -503,9 +517,17 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   // content id's, but it's only possible to save a single vote per request for now.
   static $saved = FALSE;
   if ($saved) {
-      return;
+    return;
   }
   $saved = TRUE;
+  
+  module_load_include('inc', 'rate', 'rate.bots');
+  if (rate_bots_is_blocked()) {
+    if (variable_get(RATE_VAR_BOT_RETROACTIVE, TRUE)) {
+      rate_bots_delete_votes();
+    }
+    return;
+  }
 
   // Determine if the user may vote.
   $node = $content_type == 'node' ? node_load($content_id) : NULL;
