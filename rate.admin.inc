@@ -314,7 +314,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
 
     $form['options']['option_count'] = array(
       '#type' => 'hidden',
-      '#default_value' => $option_count,
+      '#value' => $option_count,
     );
 
     $form['options']['add_another'] = array(
