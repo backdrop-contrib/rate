@@ -746,7 +746,7 @@ function rate_comment_view_alter(&$comment) {
     $widget_name = 'rate_' . $widget->name;
     $widget_code = array(
       '#weight' => $widget->comment_display == RATE_DISPLAY_ABOVE_CONTENT ? -50 : 50,
-      '#markup' => rate_generate_widget($widget_id, 'comment', $comment['#comment']->cid),
+      '#markup' => rate_generate_widget($widget_id, 'comment', $comment['#comment']->cid, $widget->comment_display_mode),
     );
     if ($widget->comment_display == RATE_DISPLAY_DISABLE) {
       $comment['#' . $widget_name] = $widget_code;
