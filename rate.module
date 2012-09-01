@@ -495,7 +495,9 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     // Check the anonymous window. We should not display this vote when its anonymous and casted too long ago.
     $anonymous_window = variable_get('votingapi_anonymous_window', 86400);
     // Use a minimum of 5 seconds. Needed to get the anonymous vote directly after the user has voted.
-    $anonymous_window = max(5, $anonymous_window);
+    if ($anonymous_window != -1) {
+      $anonymous_window = max(5, $anonymous_window);
+    }
     if ($user->uid || $user_vote[0]['timestamp'] > REQUEST_TIME - $anonymous_window || $anonymous_window == -1) {
       $output['user_vote'] = $user_vote[0]['value'];
       if ($widget->value_type == 'option') {
