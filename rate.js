@@ -33,10 +33,10 @@
       q = q + '&value=' + data.value;
     }
 
-    $.get(Drupal.settings.rate.basePath + q, function(data) {
-      if (data.match(/^https?\:\/\/[^\/]+\/(.*)$/)) {
+    $.get(Drupal.settings.rate.basePath + q, function(response) {
+      if (response.match(/^https?\:\/\/[^\/]+\/(.*)$/)) {
         // We got a redirect.
-        document.location = data;
+        document.location = response;
       }
       else {
         // get parent object
@@ -45,7 +45,7 @@
         // Invoke JavaScript hook.
         widget.trigger('eventAfterRate', [data]);
 
-        widget.before(data);
+        widget.before(response);
 
         // remove widget
         widget.remove();
