@@ -207,7 +207,9 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   _rate_check_widget($widget);
 
   // Determine if the user may vote.
-  $node = $content_type == 'node' ? node_load($content_id) : NULL;
+  $entities = entity_load($content_type, array($content_id));
+  $node = $entities[$content_id];
+  
   $permission_status = _rate_check_permissions($widget, $node);
 
   // This option should be available, check for legacy.
@@ -542,7 +544,9 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   }
 
   // Determine if the user may vote.
-  $node = $content_type == 'node' ? node_load($content_id) : NULL;
+  $entities = entity_load($content_type, array($content_id));
+  $node = $entities[$content_id];
+  
   $permission_status = _rate_check_permissions($widget, $node);
   
   // This option should be available, check for legacy.
