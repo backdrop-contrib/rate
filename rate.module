@@ -289,7 +289,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
       'destination' => $dest['destination'],
     )
   ), array('type' => 'setting'));
-  drupal_add_js(drupal_get_path('module', 'rate') . '/rate.js', array('scope' => 'footer'));
+  drupal_add_js(drupal_get_path('module', 'rate') . '/rate.js');
 
   $links = array();
   foreach ($widget->options as $option) {
@@ -326,7 +326,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   }
 
   if (isset($widget->js)) {
-    drupal_add_js($widget->js, array('scope' => 'footer'));
+    drupal_add_js($widget->js);
   }
 
   if ($widget->mode == RATE_CLOSED && ($mode == RATE_COMPACT || $mode == RATE_DISABLED || $mode == RATE_COMPACT_DISABLED)) {
