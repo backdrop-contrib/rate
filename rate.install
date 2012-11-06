@@ -118,8 +118,12 @@ function rate_update_6001() {
  */
 function rate_update_7100() {
   $schema = drupal_get_schema_unprocessed('rate');
-  db_create_table('rate_bot_agent', $schema['rate_bot_agent']);
-  db_create_table('rate_bot_ip', $schema['rate_bot_ip']);
+	if (!db_table_exists("rate_bot_agent")) {
+		db_create_table('rate_bot_agent', $schema['rate_bot_agent']);
+	}
+	if (!db_table_exists("rate_bot_ip")) {
+		db_create_table('rate_bot_ip', $schema['rate_bot_ip']);
+	}
 }
 
 /**
