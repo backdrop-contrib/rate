@@ -45,6 +45,7 @@ define('RATE_VAR_BOT_MINUTE_THRESHOLD', 'rate_bot_minute_threshold');
 define('RATE_VAR_BOT_HOUR_THRESHOLD', 'rate_bot_hour_threshold');
 define('RATE_VAR_BOT_RETROACTIVE', 'rate_bot_retroactive');
 define('RATE_VAR_BOT_BOTSCOUT_KEY', 'rate_bot_botscout_key');
+define('RATE_VAR_CRON_DELETE_LIMIT', 'rate_cron_delete_limit');
 
 // Define constants for permission status.
 define('RATE_PERMISSION_OK', 1);
@@ -538,7 +539,12 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   module_load_include('inc', 'rate', 'rate.bots');
   if (rate_bots_is_blocked()) {
     if (variable_get(RATE_VAR_BOT_RETROACTIVE, TRUE)) {
-      rate_bots_delete_votes();
+      $ip = ip_address();
+      if (!rate_bots_is_local($ip)) {
+        $queue = DrupalQueue::get('rate_delete_votes');
+        $queue->createQueue();
+        $queue->createItem($ip);
+      }
     }
     return;
   }
@@ -1432,4 +1438,12 @@ function rate_votingapi_metadata_alter(&$data) {
       'description' => t('Votes that are counted per option without meaningful average.'),
     );
   }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function rate_cron() {
+  module_load_include('inc', 'rate', 'rate.bots');
+  rate_bots_delete_votes();
 }
