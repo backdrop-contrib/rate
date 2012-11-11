@@ -241,8 +241,10 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   $theme_name = str_replace('-', '_', $widget->name);
   $theme = array('rate_widget__' . $theme_name, 'rate_widget');
   if (isset($widget->theme)) {
-    // This overrules the default theming pattern. Used for templates.
-    $theme = $widget->theme;
+    // Insert the general widget template suggestion at second position to go
+    // after the specific widget template and before the overall general
+    // template.
+    array_splice($theme, 1, 0, $widget->theme);
   }
 
   // Get voting results.
