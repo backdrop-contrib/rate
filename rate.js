@@ -28,7 +28,7 @@
     // Random number to prevent caching, see http://drupal.org/node/1042216#comment-4046618
     var random = Math.floor(Math.random() * 99999);
 
-    var q = Drupal.settings.rate.basePath.match(/\?/) ? '&' : '?' + 'widget_id=' + data.widget_id + '&content_type=' + data.content_type + '&content_id=' + data.content_id + '&widget_mode=' + data.widget_mode + '&token=' + token + '&destination=' + encodeURIComponent(Drupal.settings.rate.destination) + '&r=' + random;
+    var q = (Drupal.settings.rate.basePath.match(/\?/) ? '&' : '?') + 'widget_id=' + data.widget_id + '&content_type=' + data.content_type + '&content_id=' + data.content_id + '&widget_mode=' + data.widget_mode + '&token=' + token + '&destination=' + encodeURIComponent(Drupal.settings.rate.destination) + '&r=' + random;
     if (data.value) {
       q = q + '&value=' + data.value;
     }
