@@ -429,6 +429,32 @@ function _rate_check_permissions($widget, $node = NULL) {
 }
 
 /**
+ * Get entity id for source translation.
+ * 
+ * This function is safe for use with unsupported entity types.
+ * 
+ * @param string $entity_type
+ * @param int $entity_id
+ * @return int
+ */
+function _rate_get_source_translation($entity_type, $entity_id) {
+  if ($entity_type == 'node' && module_exists('translation')) {
+    if (arg(0) == 'node' && arg(1) == $entity_id) {
+      // We are on the node page. Use node_load since the node is in static cache.
+      $entity_id = node_load($entity_id)->tnid;
+    }
+    else {
+      // We are not on the node page. Do not use node_load to prevent executing many useless queries.
+      $tnid = db_select('node', 'n')->fields('n', array('tnid'))->condition('n.nid', $entity_id)->execute()->fetchField();
+      if ($tnid) {
+        $entity_id = $tnid;
+      }
+    }
+  }
+  return $entity_id;
+}
+
+/**
  * Get results for a voting widget.
  *
  * @param string $content_type "node" or "comment"
@@ -447,6 +473,11 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     'tag' => $widget->tag,
     'value_type' => $widget->value_type,
   );
+  
+  // Check if we should use the source translation.
+  if ($widget->use_source_translation) {
+    $criteria['entity_id'] = _rate_get_source_translation($criteria['entity_type'], $criteria['entity_id']);
+  }
 
   $results = votingapi_select_results($criteria);
 
@@ -549,6 +580,11 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
       }
     }
     return;
+  }
+  
+  // Check if we should use the source translation.
+  if ($widget->use_source_translation) {
+    $content_id = _rate_get_source_translation($content_type, $content_id);
   }
 
   // Determine if the user may vote.

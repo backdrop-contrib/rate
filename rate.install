@@ -140,3 +140,20 @@ function rate_update_7101() {
   variable_set('rate_widgets', $widgets);
   return array();
 }
+
+/**
+ * Add "use_source_translation" property.
+ */
+function rate_update_7102() {
+  $widgets = variable_get('rate_widgets', array());
+  foreach ($widgets as $widget_id => $widget) {
+    if (!isset($widget->use_source_translation)) {
+      // The default setting for new widgets is TRUE. But we set it here to
+      // FALSE to not change existing behavior.
+      $widget->use_source_translation = FALSE;
+    }
+    $widgets[$widget_id] = $widget;
+  }
+  variable_set('rate_widgets', $widgets);
+  return array();
+}
