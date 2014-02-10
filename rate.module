@@ -375,7 +375,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     $token = _rate_get_token($id);
     $classes[] = 'rate-' . $token;
     return
-      '<div class="' . implode(' ', $classes) . '" id="' . $div_id . '">' .
+      '<div class="' . implode(' ', $classes) . ' ' . $div_id . '" id="' . drupal_html_id($div_id) . '">' .
       $widget_html .
       '</div>';
   }
