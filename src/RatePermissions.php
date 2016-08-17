@@ -60,14 +60,16 @@ class RatePermissions implements ContainerInjectionInterface {
   public function permissions() {
     $permissions = [];
     $enabled_bundles = $this->config->get('enabled_bundles');
-    foreach ($enabled_bundles as $bundle_id => $enabled) {
-      $permissions['cast rate vote on ' . $bundle_id] = [
-        'title' => $this->t('Can vote on :bundle',
-          [
-            ':bundle' => $bundle_id,
-          ]
-        ),
-      ];
+    if (!empty($enabled_bundles)) {
+      foreach ($enabled_bundles as $bundle_id => $enabled) {
+        $permissions['cast rate vote on ' . $bundle_id] = [
+          'title' => $this->t('Can vote on :bundle',
+            [
+              ':bundle' => $bundle_id,
+            ]
+          ),
+        ];
+      }
     }
 
     return $permissions;

@@ -19,13 +19,15 @@ function rate_entity_extra_field_info() {
   $extra = [];
   $config = \Drupal::config('rate.settings');
   $enabled_bundles = $config->get('enabled_bundles');
-  foreach ($enabled_bundles as $bundle_id => $entity_type_id) {
-    $extra[$entity_type_id][$bundle_id]['display']['rate_vote_widget'] = array(
-      'label' => t('Rate Vote Widget'),
-      'description' => t('Displays the rate voting widget selected from the settings page.'),
-      'weight' => 100,
-      'visible' => TRUE,
-    );
+  if (!empty($enabled_bundles)) {
+    foreach ($enabled_bundles as $bundle_id => $entity_type_id) {
+      $extra[$entity_type_id][$bundle_id]['display']['rate_vote_widget'] = array(
+        'label' => t('Rate Vote Widget'),
+        'description' => t('Displays the rate voting widget selected from the settings page.'),
+        'weight' => 100,
+        'visible' => TRUE,
+      );
+    }
   }
 
   return $extra;
