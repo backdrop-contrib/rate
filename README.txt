@@ -1,3 +1,35 @@
+D8 Update
+---------
+Will track progress of D8 port in this section. Note that not everything has
+been fully tested.
+
+Implemented
+ - Up/down (number up/down, thumbs up/down, yes/no) voting
+ - Fivestar voting
+ - CSS and templates
+ - Voting Results tab for nodes
+ - Voting via AJAX
+ - Undo vote
+ - Voting on comments and other entity types (not all have tested)
+
+Not implemented yet:
+
+ - Emotion voting (do not plan on porting)
+ - Configurable Intro, description & already voted text
+ - Full array of configuration from rate d7
+ - Different widget display types
+ - expiration sub-module
+ - Migration from D7 version
+
+Limitations:
+ - Only one voting type per entity (node) type
+ - No migration for switching from one widget type to another
+
+Known Issues:
+ - Anonymous voter being treated as a singular entity; can't vote more than once
+
+
+Readme from D7:
 
 PREFACE
 -------
