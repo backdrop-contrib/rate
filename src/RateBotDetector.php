@@ -60,11 +60,13 @@ class RateBotDetector {
   /**
    * RateBotDetector constructor.
    *
-   * @param ConfigFactoryInterface $config_factory
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
-   * @param Connection $database
+   * @param \Drupal\Core\Database\Connection $database
    *   Database connection object.
-   * @param RequestStack $request_stack
+   * @param \GuzzleHttp\Client $http_client
+   *   Http client object.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   Database connection object.
    */
   public function __construct(ConfigFactoryInterface $config_factory, Connection $database, Client $http_client, RequestStack $request_stack) {

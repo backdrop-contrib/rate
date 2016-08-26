@@ -4,36 +4,45 @@
  * Default theme implementation for thumbs up/down voting display.
  *
  * Available variables:
- * - identifier: Outer div ID for AJAX purposes.
- * - up_button: Up text/image for up vote.
- * - up_percent: Percentage of up votes.
- * - down_button: Up text/image for down vote.
- * - down_percent: Percentage of down votes.
+ * - widget_attributes: Attributes for outer div.
+ * - has_voted: Boolean if user has voted.
+ * - up_li_attributes: Attributes for the up li.
+ * - up_attributes: Attributes for the up div or link.
+ * - up_url: Url to vote up.
+ * - up_percent: Score of up votes.
+ * - percent_attributes: Attributes for the percent display div.
+ * - down_percent: Score of down votes.
+ * - down_li_attributes: Attributes for the down li.
+ * - down_url: Url to vote Down.
+ * - down_attributes: Attributes for down div or link.
  * - undo: Link to undo placed vote.
- * - info: Optional brief text to present with voting widgets.
- * - description: Optional longer description to present with voting widgets.
+ * - undo_attributes: Attributes for undo div.
+ * - info_description: Extra textual info to display.
  *
  * @ingroup themeable
  */
 #}
-<div id={{ identifier }} class="rate-widget-thumbs-up-down">
+<div{{ widget_attributes }}>
   <ul>
-    <li class="thumb-up">
-      {{ up_button }}
-      <div class="percent">{{ up_percent }}%</div>
+    <li{{ up_li_attributes }}>
+      {% if has_voted or not can_vote %}
+        <div{{ up_attributes }}>{{ 'Up'|t }}</div>
+      {% else %}
+        <a {{ up_attributes }} href="{{ up_url }}">{{ 'Up'|t }}</a>
+      {% endif %}
+      <div{{ percent_attributes }}>{{ up_percent }}%</div>
     </li>
-    <li class="thumb-down">
-      {{ down_button }}
-      <div class="percent">{{ down_percent }}%</div>
+    <li{{ down_li_attributes }}>
+      {% if has_voted %}
+        <div{{ down_attributes }}>{{ 'Down'|t }}</div>
+      {% else %}
+        <a {{ down_attributes }} href="{{ down_url }}">{{ 'Down'|t }}</a>
+      {% endif %}
+      <div{{ percent_attributes }}>{{ down_percent }}%</div>
     </li>
   </ul>
   {% if undo %}
-    <div class="rate-undo-vote">{{ undo }}</div>
+    <div{{ undo_attributes }}>{{ undo }}</div>
   {% endif %}
-  {% if info %}
-    <div class="rate-info">{{ info }}</div>
-  {% endif %}
-  {% if description %}
-    <div class="rate-description">{{ description }}</div>
-  {% endif %}
+  {{ info_description }}
 </div>

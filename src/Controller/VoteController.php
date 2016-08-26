@@ -2,23 +2,19 @@
 
 namespace Drupal\rate\Controller;
 
-use Drupal\Core\Cache\Cache;
-use Drupal\Core\Ajax\ReplaceCommand;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Database\Connection;
-use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
+use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Render\RendererInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Drupal\votingapi\Entity\Vote;
-use Drupal\votingapi\Entity\VoteType;
-use Drupal\rate\RateBotDetector;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\rate\RateEntityVoteWidget;
+use Drupal\rate\RateVote;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Returns responses for Rate routes.
@@ -40,32 +36,11 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
   protected $entityTypeManager;
 
   /**
-   * Database connection object.
+   * The cache tags invalidator.
    *
-   * @var \Drupal\Core\Database\Connection
+   * @var \Drupal\Core\Cache\CacheTagsInvalidatorInterface
    */
-  protected $database;
-
-  /**
-   * Database connection object.
-   *
-   * @var \Drupal\rate\RateBotDetector
-   */
-  protected $botDetector;
-
-  /**
-   * RateEntityVoteWidget connection object.
-   *
-   * @var \Drupal\rate\RateEntityVoteWidget
-   */
-  protected $voteWidget;
-
-  /**
-   * Account proxy (the current user).
-   *
-   * @var \Drupal\Core\Session\AccountProxyInterface
-   */
-  protected $accountProxy;
+  protected $cacheTagsInvalidator;
 
   /**
    * The renderer service.
@@ -75,37 +50,47 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
   protected $renderer;
 
   /**
-   * Constructs a new search route subscriber.
+   * The vote service.
+   *
+   * @var \Drupal\rate\RateVote
+   */
+  protected $rateVote;
+
+  /**
+   * RateEntityVoteWidget connection object.
+   *
+   * @var \Drupal\rate\RateEntityVoteWidget
+   */
+  protected $voteWidget;
+
+  /**
+   * Constructs a Vote Controller.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
-   * @param \Drupal\Core\Database\Connection $database
-   *   The entity type manager.
-   * @param \Drupal\rate\RateBotDetector $bot_detector
+   * @param \Drupal\Core\Cache\CacheTagsInvalidatorInterface $cache_tags_invalidator
+   *   The cache tags invalidator.
+   * @param \Drupal\Core\Render\RendererInterface $renderer
+   *   The renderer service.
+   * @param \Drupal\rate\RateVote $rate_vote
    *   The bot detector service.
    * @param \Drupal\rate\RateEntityVoteWidget $vote_widget
    *   The vote widget to display.
-   * @param \Drupal\Core\Session\AccountProxyInterface $account_proxy
-   *   The current user.
-   * @param \Drupal\Core\Render\RendererInterface $renderer
-   *   The renderer service.
    */
   public function __construct(ConfigFactoryInterface $config_factory,
                               EntityTypeManagerInterface $entity_type_manager,
-                              Connection $database,
-                              RateBotDetector $bot_detector,
-                              RateEntityVoteWidget $vote_widget,
-                              AccountProxyInterface $account_proxy,
-                              RendererInterface $renderer) {
+                              CacheTagsInvalidatorInterface $cache_tags_invalidator,
+                              RendererInterface $renderer,
+                              RateVote $rate_vote,
+                              RateEntityVoteWidget $vote_widget) {
     $this->config = $config_factory->get('rate.settings');
     $this->entityTypeManager = $entity_type_manager;
-    $this->database = $database;
-    $this->botDetector = $bot_detector;
-    $this->voteWidget = $vote_widget;
-    $this->accountProxy = $account_proxy;
+    $this->cacheTagsInvalidator = $cache_tags_invalidator;
     $this->renderer = $renderer;
+    $this->rateVote = $rate_vote;
+    $this->voteWidget = $vote_widget;
   }
 
   /**
@@ -115,12 +100,62 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
     return new static(
       $container->get('config.factory'),
       $container->get('entity_type.manager'),
-      $container->get('database'),
-      $container->get('rate.bot_detector'),
-      $container->get('rate.entity.vote_widget'),
-      $container->get('current_user'),
-      $container->get('renderer')
+      $container->get('cache_tags.invalidator'),
+      $container->get('renderer'),
+      $container->get('rate.vote'),
+      $container->get('rate.entity.vote_widget')
     );
+  }
+
+  /**
+   * Invalidate cache tags to update vote display.
+   *
+   * @param string $entity_type_id
+   *   The entity type.
+   * @param int $entity_id
+   *   The entity id.
+   * @param string $bundle
+   *   The bundle name.
+   */
+  protected function invalidateCacheTags($entity_type_id, $entity_id, $bundle) {
+    $invalidate_tags = [
+      $entity_type_id . ':' . $entity_id,
+      'vote:' . $bundle . ':' . $entity_id,
+    ];
+    $this->cacheTagsInvalidator->invalidateTags($invalidate_tags);
+  }
+
+  /**
+   * Prepare a response object.
+   *
+   * @param string $entity_type_id
+   *   The entity type.
+   * @param int $entity_id
+   *   The entity id.
+   * @param string $bundle
+   *   The bundle name.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request object.
+   *
+   * @return AjaxResponse|RedirectResponse
+   *   The response object.
+   */
+  protected function prepareResponse($entity_type_id, $entity_id, $bundle, Request $request) {
+    $use_ajax = $this->config->get('use_ajax');
+    // If Request was AJAX and voting on a node, send AJAX response.
+    if ($use_ajax) {
+      $response = new AjaxResponse();
+      $vote_widget = $this->voteWidget->buildRateVotingWidget($entity_id, $entity_type_id, $bundle);
+      $widget_id = '#rate-' . $entity_type_id . '-' . $entity_id;
+      $html = $this->renderer->render($vote_widget);
+      $response->addCommand(new ReplaceCommand($widget_id, $html));
+      return $response;
+    }
+    // Otherwise, redirect back to destination.
+    else {
+      $url = $request->getUriForPath($request->getPathInfo());
+      return new RedirectResponse($url);
+    }
   }
 
   /**
@@ -132,133 +167,37 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
    *   Vote type id.
    * @param int $entity_id
    *   Entity id of the entity type.
-   * @param Request $request
+   * @param \Symfony\Component\HttpFoundation\Request $request
    *   Request object that contains redirect path.
    *
-   * @return RedirectResponse
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
    *   Redirect to path provided in request.
    */
   public function vote($entity_type_id, $vote_type_id, $entity_id, Request $request) {
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($entity_id);
-    $is_bot_vote = $this->botDetector->checkIsBot();
-    $use_ajax = $this->config->get('use_ajax', FALSE);
-
-    if (!$is_bot_vote && $this->accountProxy->hasPermission('cast rate vote on ' . $entity->bundle())) {
-      $vote_storage = $this->entityTypeManager->getStorage('vote');
-      $user_votes = $vote_storage->getUserVotes(
-        $this->accountProxy->id(),
-        $vote_type_id,
-        $entity_type_id,
-        $entity_id
-      );
-
-      // If user hasn't voted, save the vote.
-      if (empty($user_votes)) {
-        $vote_type = VoteType::load($vote_type_id);
-        $vote = Vote::create(['type' => $vote_type_id]);
-        $vote->setVotedEntityId($entity_id);
-        $vote->setVotedEntityType($entity_type_id);
-        $vote->setValueType($vote_type->getValueType());
-        $vote->setValue(1);
-        $vote->save();
-        $invalidate_tags = [
-          $entity_type_id . ':' . $entity_id,
-          'vote:' . $entity->bundle() . ':' . $entity_id,
-        ];
-        Cache::invalidateTags($invalidate_tags);
-
-        if (!$use_ajax) {
-          drupal_set_message(t('Your :type vote was added.', [
-            ':type' => $vote_type_id,
-          ]));
-        }
-      }
-      // Otherwise, inform user of previous vote.
-      elseif (!$use_ajax) {
-        drupal_set_message(
-          t('You are not allowed to vote the same way multiple times.'), 'warning'
-        );
-      }
-    }
-
-    // If Request was AJAX and voting on a node, send AJAX response.
-    if ($use_ajax && $entity_type_id == 'node') {
-      $response = new AjaxResponse();
-      $vote_widget = $this->voteWidget->buildRateVotingWidget($entity_id, $entity_type_id, $entity->bundle());
-      $widget_class = '#rate-' . $entity_type_id . '-' . $entity_id;
-      $html = $this->renderer->render($vote_widget);
-      $response->addCommand(new ReplaceCommand($widget_class, $html));
-      return $response;
-    }
-    // Otherwise, redirect back to destination.
-    else {
-      $url = $request->getUriForPath($request->getPathInfo());
-      return new RedirectResponse($url);
-    }
+    $this->rateVote->vote($entity_type_id, $vote_type_id, $entity_id, $request);
+    $this->invalidateCacheTags($entity_type_id, $entity_id, $entity->bundle());
+    return $this->prepareResponse($entity_type_id, $entity_id, $entity->bundle(), $request);
   }
 
   /**
-   * Record a vote.
+   * Undo a vote.
    *
    * @param string $entity_type_id
    *   Entity type ID such as node.
    * @param int $entity_id
    *   Entity id of the entity type.
-   * @param Request $request
+   * @param \Symfony\Component\HttpFoundation\Request $request
    *   Request object that contains redirect path.
    *
-   * @return RedirectResponse
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
    *   Redirect to path provided in request.
    */
   public function undoVote($entity_type_id, $entity_id, Request $request) {
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($entity_id);
-    $is_bot_vote = $this->botDetector->checkIsBot();
-    $use_ajax = $this->config->get('use_ajax', FALSE);
-
-    if (!$is_bot_vote && $this->accountProxy->hasPermission('cast rate vote on ' . $entity->bundle())) {
-      $vote_storage = $this->entityTypeManager->getStorage('vote');
-      $user_votes = $vote_storage->getUserVotes(
-        $this->accountProxy->id(),
-        NULL,
-        $entity_type_id,
-        $entity_id
-      );
-
-      // If a vote has been found, remove it.
-      if (!empty($user_votes)) {
-        $vote = Vote::load(array_pop($user_votes));
-        $vote->delete();
-        $invalidate_tags = [
-          $entity_type_id . ':' . $entity_id,
-          'vote:' . $entity->bundle() . ':' . $entity_id,
-        ];
-        Cache::invalidateTags($invalidate_tags);
-        if (!$use_ajax) {
-          drupal_set_message(t('Your vote was removed.'));
-        }
-      }
-      // Otherwise, inform user of previous vote.
-      elseif (!$use_ajax) {
-        drupal_set_message(
-          t('A previous vote was not found.'), 'warning'
-        );
-      }
-    }
-
-    // If Request was AJAX and voting on a node, send AJAX response.
-    if ($use_ajax && $entity_type_id == 'node') {
-      $response = new AjaxResponse();
-      $vote_widget = $this->voteWidget->buildRateVotingWidget($entity_id, $entity_type_id, $entity->bundle());
-      $widget_class = '#rate-' . $entity_type_id . '-' . $entity_id;
-      $html = $this->renderer->render($vote_widget);
-      $response->addCommand(new ReplaceCommand($widget_class, $html));
-      return $response;
-    }
-    // Otherwise, redirect back to destination.
-    else {
-      $url = $request->getUriForPath($request->getPathInfo());
-      return new RedirectResponse($url);
-    }
+    $this->rateVote->undoVote($entity_type_id, $entity_id, $request);
+    $this->invalidateCacheTags($entity_type_id, $entity_id, $entity->bundle());
+    return $this->prepareResponse($entity_type_id, $entity_id, $entity->bundle(), $request);
   }
 
 }

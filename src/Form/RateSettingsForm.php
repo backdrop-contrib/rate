@@ -2,13 +2,18 @@
 
 namespace Drupal\rate\Form;
 
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Configure rate settings for the site.
  */
-class RateSettingsForm extends ConfigFormBase {
+class RateSettingsForm extends ConfigFormBase implements ContainerInjectionInterface {
 
   /**
    * {@inheritdoc}
@@ -25,23 +30,40 @@ class RateSettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Get a list of acceptable entity types.
+   * The entity type manager.
    *
-   * @return array
-   *   Returns an array of allowed entity types for voting.
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected function getAllowedTypes() {
-    // @Todo: make these configurable.
-    return [
-      'block',
-      'block_content_type',
-      'comment_type',
-      'contact_form',
-      'node_type',
-      'search_page',
-      'taxonomy_vocabulary',
-      'view',
-    ];
+  protected $entityTypeManager;
+
+  /**
+   * The Http Client object.
+   *
+   * @var \GuzzleHttp\Client
+   */
+  protected $httpClient;
+
+  /**
+   * Constructs a Vote Controller.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   * @param \GuzzleHttp\Client $http_client
+   *   Http client object.
+   */
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, Client $http_client) {
+    $this->entityTypeManager = $entity_type_manager;
+    $this->httpClient = $http_client;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity_type.manager'),
+      $container->get('http_client')
+    );
   }
 
   /**
@@ -120,24 +142,44 @@ class RateSettingsForm extends ConfigFormBase {
       '#description' => t('If you disable any type here, already existing data will remain untouched.'),
     ];
 
-    $entity_types = \Drupal::entityTypeManager()->getDefinitions();
-    $enabled_bundles = $config->get('enabled_bundles');
+    $entity_types = $this->entityTypeManager->getDefinitions();
+    $entity_type_ids = array_keys($entity_types);
+    $enabled_types_bundles = $config->get('enabled_types_bundles');
+
     foreach ($entity_types as $entity_type_id => $entity_type) {
-      $bundles = \Drupal::entityTypeManager()->getStorage($entity_type_id)->loadMultiple();
-      if (!empty($bundles) && in_array($entity_type_id, $this->getAllowedTypes())) {
-        $form['rate_types_enabled'][$entity_type_id . '_enabled'] = [
-          '#type' => 'details',
-          '#open' => FALSE,
-          '#title' => $entity_type->getLabel(),
-        ];
-        foreach ($bundles as $bundle) {
-          $default_value = (isset($enabled_bundles[$bundle->id()])) ? 1 : 0;
-          $form['rate_types_enabled'][$entity_type_id . '_enabled'][$bundle->id()] = [
-            '#type' => 'checkbox',
-            '#title' => $bundle->label(),
-            '#default_value' => $default_value,
+      // Only allow voting on content entities.
+      // Also, don't allow voting on votes, that would be weird.
+      if ($entity_type->getBundleOf() && $entity_type->getBundleOf() != 'vote') {
+        $bundles = $this->entityTypeManager->getStorage($entity_type_id)->loadMultiple();
+        $content_entitites_with_bundles[] = $entity_type->getBundleOf();
+        if (!empty($bundles)) {
+          $form['rate_types_enabled'][$entity_type_id . '_enabled'] = [
+            '#type' => 'details',
+            '#open' => FALSE,
+            '#title' => $entity_type->getBundleOf(),
           ];
+          foreach ($bundles as $bundle) {
+            $default_value = 0;
+            if (isset($enabled_types_bundles[$entity_type->getBundleOf()]) && in_array($bundle->id(), $enabled_types_bundles[$entity_type->getBundleOf()])) {
+              $default_value = 1;
+            }
+            $form['rate_types_enabled'][$entity_type_id . '_enabled']['enabled|' . $entity_type->getBundleOf() . '|' . $bundle->id()] = [
+              '#type' => 'checkbox',
+              '#title' => $bundle->label(),
+              '#default_value' => $default_value,
+            ];
+          }
         }
+      }
+      elseif ($entity_type->getGroup() == 'content' &&
+        !in_array($entity_type->getBundleEntityType(), $entity_type_ids) &&
+        $entity_type_id != 'vote_result') {
+        $default_value = (isset($enabled_types_bundles[$entity_type_id])) ? 1 : 0;
+        $form['rate_types_enabled']['enabled|' . $entity_type_id . '|' . $entity_type_id] = [
+          '#type' => 'checkbox',
+          '#title' => $entity_type_id,
+          '#default_value' => $default_value,
+        ];
       }
     }
 
@@ -151,7 +193,7 @@ class RateSettingsForm extends ConfigFormBase {
     if ($form_state->getValue(['botscout_key'])) {
       $uri = "http://botscout.com/test/?ip=84.16.230.111&key=" . $form_state->getValue(['botscout_key']);
       try {
-        $response = \Drupal::httpClient()->get($uri, ['headers' => ['Accept' => 'text/plain']]);
+        $response = $this->httpClient->get($uri, ['headers' => ['Accept' => 'text/plain']]);
         $data = (string) $response->getBody();
         $status_code = $response->getStatusCode();
         if (empty($data)) {
@@ -182,17 +224,23 @@ class RateSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('rate.settings');
 
-    $enabled_bundles = [];
-    $entity_types = \Drupal::entityTypeManager()->getDefinitions();
-    foreach ($entity_types as $entity_type_id => $entity_type) {
-      $bundles = \Drupal::entityTypeManager()->getStorage($entity_type_id)->loadMultiple();
-      foreach ($bundles as $bundle) {
-        if ($form_state->getValue($bundle->id())) {
-          $enabled_bundles[$bundle->id()] = $entity_type->getBundleOf();
+    $enabled_types_bundles = [];
+    $values = $form_state->getValues();
+    foreach ($values as $index => $value) {
+      if (stripos($index, 'enabled|') !== FALSE && $value) {
+        // Retrieve the entity and bundle values (entity first).
+        $entity_bundle = explode('|', str_ireplace('enabled|', '', $index));
+        // Key on entity and create an child array of bundles.
+        if (isset($enabled_types_bundles[$entity_bundle[0]])) {
+          $enabled_types_bundles[$entity_bundle[0]][] = $entity_bundle[1];
+        }
+        else {
+          $enabled_types_bundles[$entity_bundle[0]] = [];
+          $enabled_types_bundles[$entity_bundle[0]][] = $entity_bundle[1];
         }
       }
     }
-    $config->set('enabled_bundles', $enabled_bundles);
+    $config->set('enabled_types_bundles', $enabled_types_bundles);
 
     $config->set('widget_type', $form_state->getValue('widget_type'))
       ->set('bot_minute_threshold', $form_state->getValue('bot_minute_threshold'))

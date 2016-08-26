@@ -52,23 +52,39 @@ class RatePermissions implements ContainerInjectionInterface {
   }
 
   /**
-   * Get permissions for Taxonomy Views Integrator.
+   * Get permissions for Rate module.
    *
    * @return array
    *   Permissions array.
    */
   public function permissions() {
     $permissions = [];
-    $enabled_bundles = $this->config->get('enabled_bundles');
-    if (!empty($enabled_bundles)) {
-      foreach ($enabled_bundles as $bundle_id => $enabled) {
-        $permissions['cast rate vote on ' . $bundle_id] = [
-          'title' => $this->t('Can vote on :bundle',
-            [
-              ':bundle' => $bundle_id,
-            ]
-          ),
-        ];
+    $enabled_types_bundles = $this->config->get('enabled_types_bundles');
+    if (!empty($enabled_types_bundles)) {
+      foreach ($enabled_types_bundles as $entity_type_id => $bundles) {
+        foreach ($bundles as $bundle_id) {
+          if ($bundle_id == $entity_type_id) {
+            $perm_index = 'cast rate vote on ' . $entity_type_id . ' of ' . $bundle_id;
+            $permissions[$perm_index] = [
+              'title' => $this->t('Can vote on :type',
+                [
+                  ':type' => $entity_type_id,
+                ]
+              ),
+            ];
+          }
+          else {
+            $perm_index = 'cast rate vote on ' . $entity_type_id . ' of ' . $bundle_id;
+            $permissions[$perm_index] = [
+              'title' => $this->t('Can vote on :type type of :bundle',
+                [
+                  ':bundle' => $bundle_id,
+                  ':type' => $entity_type_id,
+                ]
+              ),
+            ];
+          }
+        }
       }
     }
 

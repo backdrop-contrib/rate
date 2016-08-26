@@ -43,13 +43,13 @@ class RateEntityVoteWidget {
   /**
    * Constructs a RateEntityVoteWidget object.
    *
-   * @param ConfigFactoryInterface $config_factory
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
-   * @param EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
-   * @param AccountProxyInterface $account_proxy
+   * @param \Drupal\Core\Session\AccountProxyInterface $account_proxy
    *   The account proxy.
-   * @param VoteResultFunctionManager $result_manager
+   * @param \Drupal\votingapi\VoteResultFunctionManager $result_manager
    *   The vote result manager.
    */
   public function __construct(ConfigFactoryInterface $config_factory,
@@ -59,7 +59,7 @@ class RateEntityVoteWidget {
     $this->config = $config_factory->get('rate.settings');
     $this->entityTypeManager = $entity_type_manager;
     $this->accountProxy = $account_proxy;
-    $this->result_manager = $result_manager;
+    $this->resultManager = $result_manager;
   }
 
   /**
@@ -77,22 +77,25 @@ class RateEntityVoteWidget {
    */
   public function buildRateVotingWidget($entity_id, $entity_type_id, $bundle) {
     $output = [];
-    $config_id = $entity_type_id . '_' . $bundle . '_available';
-
     $widget_type = $this->config->get('widget_type', 'number_up_down');
     $rate_theme = 'rate_template_' . $widget_type;
-    $enabled_bundles = $this->config->get('enabled_bundles', FALSE);
+    $enabled_types_bundles = $this->config->get('enabled_types_bundles');
 
-    if (isset($enabled_bundles[$bundle])) {
+    if (isset($enabled_types_bundles[$entity_type_id]) && in_array($bundle, $enabled_types_bundles[$entity_type_id])) {
       // Set variables.
-      $use_ajax = $this->config->get('use_ajax', FALSE);
+      $use_ajax = $this->config->get('use_ajax');
       $vote_storage = $this->entityTypeManager->getStorage('vote');
-      $user_votes = $vote_storage->getUserVotes($this->accountProxy->id(), NULL, NULL, $entity_id);
-      $has_voted = (!empty($user_votes)) ? TRUE : FALSE;
-      $user_can_vote = $this->accountProxy->hasPermission('cast rate vote on ' . $bundle);
+      $vote_ids = $vote_storage->getUserVotes(
+        $this->accountProxy->id(),
+        NULL,
+        $entity_type_id,
+        $entity_id
+      );
+      $has_voted = (!empty($vote_ids)) ? TRUE : FALSE;
+      $user_can_vote = $this->accountProxy->hasPermission('cast rate vote on ' . $entity_type_id . ' of ' . $bundle);
 
       // Get voting results.
-      $results = $this->result_manager->getResults($entity_type_id, $entity_id);
+      $results = $this->resultManager->getResults($entity_type_id, $entity_id);
 
       // Set vote type results for the entity.
       $votes_types = ['up', 'down', 'star1', 'star2', 'star3', 'star4', 'star5'];
