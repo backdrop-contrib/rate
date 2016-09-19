@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\votingapi\VoteResultFunctionManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -19,6 +20,13 @@ class RateVote implements ContainerInjectionInterface {
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
+
+  /**
+   * Votingapi result manager.
+   *
+   * @var \Drupal\votingapi\VoteResultFunctionManager
+   */
+  protected $resultManager;
 
   /**
    * Database connection object.
@@ -46,6 +54,8 @@ class RateVote implements ContainerInjectionInterface {
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\votingapi\VoteResultFunctionManager $result_manager
+   *   The vote result manager.
    * @param \Drupal\Core\Database\Connection $database
    *   The entity type manager.
    * @param \Drupal\rate\RateBotDetector $bot_detector
@@ -54,10 +64,12 @@ class RateVote implements ContainerInjectionInterface {
    *   The current user.
    */
   public function __construct(EntityTypeManagerInterface $entity_type_manager,
+                              VoteResultFunctionManager $result_manager,
                               Connection $database,
                               RateBotDetector $bot_detector,
                               AccountProxyInterface $account_proxy) {
     $this->entityTypeManager = $entity_type_manager;
+    $this->resultManager = $result_manager;
     $this->database = $database;
     $this->botDetector = $bot_detector;
     $this->accountProxy = $account_proxy;
@@ -109,6 +121,7 @@ class RateVote implements ContainerInjectionInterface {
         $vote->setValueType($vote_type->getValueType());
         $vote->setValue(1);
         $vote->save();
+        $this->resultManager->recalculateResults($entity_type_id, $entity_id, $vote_type_id);
 
         if ($show_messages) {
           drupal_set_message(t('Your :type vote was added.', [
