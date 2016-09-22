@@ -52,6 +52,28 @@ function rate_entity_view(array &$build, EntityInterface $entity, EntityViewDisp
 }
 
 /**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * This unsets Voting Results tab for non-voting-enabled node types.
+ */
+function rate_menu_local_tasks_alter(&$data, $route_name) {
+  if (isset($data['tabs'][0]) && isset($data['tabs'][0]['entity.node.canonical'])) {
+    $node = Drupal::request()->attributes->get('node');
+    $config = \Drupal::config('rate.settings');
+    $enabled_types_bundles = $config->get('enabled_types_bundles');
+    if (!empty($enabled_types_bundles)) {
+      foreach ($enabled_types_bundles as $entity_type_id => $bundles) {
+        foreach ($bundles as $bundle) {
+          if ($bundle != $node->bundle()) {
+            unset($data['tabs'][0]['rate.results_page']);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_theme().
  */
 function rate_theme($existing, $type, $theme, $path) {
