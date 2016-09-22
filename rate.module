@@ -70,6 +70,9 @@ function rate_menu_local_tasks_alter(&$data, $route_name) {
         }
       }
     }
+    elseif(isset($data['tabs'][0]['rate.results_page'])) {
+      unset($data['tabs'][0]['rate.results_page']);
+    }
   }
 }
 
