@@ -81,6 +81,7 @@ class RateVote implements ContainerInjectionInterface {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('entity_type.manager'),
+      $container->get('plugin.manager.votingapi.resultfunction'),
       $container->get('database'),
       $container->get('rate.bot_detector'),
       $container->get('current_user')

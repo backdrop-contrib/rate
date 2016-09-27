@@ -2,6 +2,7 @@
 
 namespace Drupal\rate\Controller;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\node\NodeInterface;
 
@@ -20,7 +21,10 @@ class ResultsController extends ControllerBase {
    *   The render array.
    */
   public function results(NodeInterface $node) {
-    // Return the rate results views.
+    // First, make sure the data is fresh.
+    $cache_bins = Cache::getBins();
+    $cache_bins['data']->deleteAll();
+    // Get and return the rate results views.
     $page[] = views_embed_view('rate_results', 'results_block', $node->id(), 'node');
     $page[] = views_embed_view('rate_results', 'summary_block', $node->id(), 'node');
     return $page;
