@@ -63,14 +63,16 @@ function rate_menu_local_tasks_alter(&$data, $route_name) {
     $enabled_types_bundles = $config->get('enabled_types_bundles');
     if (!empty($enabled_types_bundles)) {
       foreach ($enabled_types_bundles as $entity_type_id => $bundles) {
-        foreach ($bundles as $bundle) {
-          if ($bundle != $node->bundle()) {
-            unset($data['tabs'][0]['rate.results_page']);
-          }
+        if ($entity_type_id !== 'node') {
+          continue;
+        }
+        if (!in_array($node->bundle(), $bundles)) {
+          unset($data['tabs'][0]['rate.results_page']);
+          break;
         }
       }
     }
-    elseif(isset($data['tabs'][0]['rate.results_page'])) {
+    elseif (isset($data['tabs'][0]['rate.results_page'])) {
       unset($data['tabs'][0]['rate.results_page']);
     }
   }
