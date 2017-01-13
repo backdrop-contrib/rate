@@ -25,18 +25,18 @@
   <div class="item-list">
     <ul>
       <li{{ yes_li_attributes }}>
-        {% if has_voted or not can_vote %}
+        {% if (has_voted or not can_vote) %}
           <div{{ yes_attributes }}>{{ 'Yes'|t }}</div>
         {% else %}
-          <div{{ yes_attributes }}>{{ up_url }}</div>
+          <a {{ yes_attributes }} href="{{ up_url }}">{{ 'Yes'|t }}</a>
         {% endif %}
         <div{{ score_attributes }}>{{ up_votes }}</div>
       </li>
       <li{{ no_li_attributes }}>
-        {% if has_voted %}
+        {% if (has_voted or not can_vote) %}
           <div{{ no_attributes }}>{{ 'No'|t }}</div>
         {% else %}
-          <div{{ no_attributes }}>{{ down_url }}</div>
+          <a {{ no_attributes }} href="{{ down_url }}">{{ 'No'|t }}</a>
         {% endif %}
         <div {{ score_attributes }}>{{ down_votes }}</div>
       </li>
