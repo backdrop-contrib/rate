@@ -155,7 +155,7 @@ class RateVote implements ContainerInjectionInterface {
 
     if (!$is_bot_vote && $this->accountProxy->hasPermission('cast rate vote on ' . $entity_type_id . ' of ' . $entity->bundle())) {
       $vote_storage = $this->entityTypeManager->getStorage('vote');
-      $vote_ids = $vote_storage->getUserVotes(
+      $vote_result = $vote_storage->getUserVotes(
         $this->accountProxy->id(),
         NULL,
         $entity_type_id,
@@ -163,12 +163,22 @@ class RateVote implements ContainerInjectionInterface {
       );
 
       // If a vote has been found, remove it.
-      if (!empty($show_messages)) {
-        $vote = $vote_storage->load(array_pop($vote_ids));
-        $vote->delete();
+      if (!empty($vote_result)) {
+        $vote_ids = array_keys($vote_result);
+        $vote_id = array_pop($vote_ids);
+        $vote = $vote_storage->load($vote_id);
+        if ($vote) {
+          $vote->delete();
+        }
+
+        if ($show_messages) {
+          drupal_set_message(
+            t('Your vote was canceled.'), 'status'
+          );
+        }
       }
-      // Otherwise, inform user of previous vote.
       elseif ($show_messages) {
+        // Otherwise, inform user of previous vote.
         drupal_set_message(
           t('A previous vote was not found.'), 'warning'
         );
