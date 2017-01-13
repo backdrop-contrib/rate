@@ -168,7 +168,7 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
     $variables[$vote_type . '_attributes']['class'] = [];
     $variables[$vote_type . '_attributes']['class'][] = 'rate-number-up-down-btn-' . $vote_type;
 
-    if ($variables['use_ajax'] && !$variables['has_voted']) {
+    if ($variables['use_ajax'] && !$variables['has_voted'] && $variables['can_vote']) {
       $variables[$vote_type . '_attributes']['class'][] = 'use-ajax';
     }
   }
@@ -226,7 +226,7 @@ function template_preprocess_rate_template_fivestar(&$variables) {
     }
     $variables['stars'][$counter]['star_attributes']['class'][] = ' rate-fivestar-' . $counter;
 
-    if ($variables['use_ajax'] && !$variables['has_voted']) {
+    if ($variables['use_ajax'] && !$variables['has_voted'] && $variables['can_vote']) {
       $variables['stars'][$counter]['star_attributes']['class'][] = 'use-ajax';
     }
 
@@ -257,7 +257,7 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
     $variables[$vote_type . '_attributes']['class'] = [];
     $variables[$vote_type . '_attributes']['class'][] = 'rate-thumbs-up-down-btn-' . $vote_type;
 
-    if ($variables['use_ajax'] && !$variables['has_voted']) {
+    if ($variables['use_ajax'] && !$variables['has_voted'] && $variables['can_vote']) {
       $variables[$vote_type . '_attributes']['class'][] = 'use-ajax';
     }
   }
@@ -283,7 +283,7 @@ function template_preprocess_rate_template_thumbs_up(&$variables) {
   $variables['up_attributes']['class'] = [];
   $variables['up_attributes']['class'][] = 'rate-thumbs-up-btn-up';
 
-  if ($variables['use_ajax'] && !$variables['has_voted']) {
+  if ($variables['use_ajax'] && !$variables['has_voted'] && $variables['can_vote']) {
     $variables['up_attributes']['class'][] = 'use-ajax';
   }
   $variables['score_attributes'] = new Attribute();
@@ -311,7 +311,7 @@ function template_preprocess_rate_template_yesno(&$variables) {
     $variables[$vote_type . '_attributes']['class'][] = 'rate-yesno-btn';
     $variables[$vote_type . '_attributes']['class'][] = 'rate-' . $vote_type . '-btn';
 
-    if ($variables['use_ajax'] && !$variables['has_voted']) {
+    if ($variables['use_ajax'] && !$variables['has_voted'] && $variables['can_vote']) {
       $variables[$vote_type . '_attributes']['class'][] = 'use-ajax';
     }
   }
