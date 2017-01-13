@@ -5,10 +5,12 @@
  * Hook implementation code for the Rate module.
  */
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Template\Attribute;
 
 // @Todo add closed and extra info.
@@ -383,4 +385,40 @@ function _rate_set_common_theme_variables(&$variables, $generate_links = TRUE) {
   $variables['widget_attributes']['class'] = [];
   $class = str_ireplace('rate_template_', '', $variables['theme_hook_original']);
   $variables['widget_attributes']['class'][] = 'rate-widget-' . str_ireplace('_', '-', $class);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access().
+ */
+function rate_vote_type_access(EntityInterface $vote_type, $operation, AccountInterface $account) {
+  // If the user has the 'view rate results page' permission, we grant 'view'
+  // access to all of the vote_type configuration entities defined
+  // by the Rate module.
+  $rate_types = [
+    'down',
+    'up',
+    'star1',
+    'star2',
+    'star3',
+    'star4',
+    'star5',
+  ];
+
+  // Allow users with the permission 'view rate results page' to view metadata
+  // about any of the vote types provided by this module.
+  if (in_array($vote_type->id(), $rate_types)) {
+    switch ($operation) {
+      case 'view':
+        return AccessResult::allowedIf($account->hasPermission('view rate results page'))
+          ->cachePerPermissions()
+          ->cachePerUser();
+        break;
+
+      default:
+        return AccessResult::neutral();
+    }
+  }
+  else {
+    return AccessResult::neutral();
+  }
 }
