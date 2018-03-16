@@ -267,8 +267,16 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
   $variables['percent_attributes']['class'][] = 'percent';
 
   $total_votes = $variables['up_votes'] + $variables['down_votes'];
-  $variables['up_percent'] = round(($variables['up_votes'] / $total_votes) * 100);
-  $variables['down_percent'] = round(($variables['down_votes'] / $total_votes) * 100);
+
+  if (!empty($total_votes)) {
+    $variables['up_percent'] = round(($variables['up_votes'] / $total_votes) * 100);
+    $variables['down_percent'] = round(($variables['down_votes'] / $total_votes) * 100);
+  }
+  else {
+    $variables['up_percent'] = 0;
+    $variables['down_percent'] = 0;
+  }
+
 
   _rate_set_common_theme_variables($variables);
   _rate_get_undo_link($variables);
