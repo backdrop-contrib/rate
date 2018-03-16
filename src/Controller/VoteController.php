@@ -175,7 +175,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
    */
   public function vote($entity_type_id, $vote_type_id, $entity_id, Request $request) {
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($entity_id);
-    $this->rateVote->vote($entity_type_id, $vote_type_id, $entity_id, $request);
+    $this->rateVote->vote($entity_type_id, $vote_type_id, $entity_id, !$this->config->get('use_ajax'));
     $this->invalidateCacheTags($entity_type_id, $entity_id, $entity->bundle());
     return $this->prepareResponse($entity_type_id, $entity_id, $entity->bundle(), $request);
   }
@@ -195,7 +195,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
    */
   public function undoVote($entity_type_id, $entity_id, Request $request) {
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($entity_id);
-    $this->rateVote->undoVote($entity_type_id, $entity_id, $request);
+    $this->rateVote->undoVote($entity_type_id, $entity_id, !$this->config->get('use_ajax'));
     $this->invalidateCacheTags($entity_type_id, $entity_id, $entity->bundle());
     return $this->prepareResponse($entity_type_id, $entity_id, $entity->bundle(), $request);
   }
