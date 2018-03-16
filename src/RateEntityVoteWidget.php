@@ -122,7 +122,10 @@ class RateEntityVoteWidget {
           '#entity_id' => $entity_id,
           '#entity_type_id' => $entity_type_id,
           '#attributes' => ['class' => ['links', 'inline']],
-          '#cache' => ['tags' => ['vote:' . $bundle . ':' . $entity_id]],
+          '#cache' => [
+            'contexts' => ['user'],
+            'tags' => ['vote:' . $bundle . ':' . $entity_id],
+          ],
         ];
       }
       else {
@@ -136,7 +139,10 @@ class RateEntityVoteWidget {
           '#entity_id' => $entity_id,
           '#entity_type_id' => $entity_type_id,
           '#attributes' => ['class' => ['links', 'inline']],
-          '#cache' => ['tags' => ['vote:' . $bundle . ':' . $entity_id]],
+          '#cache' => [
+            'contexts' => ['user'],
+            'tags' => ['vote:' . $bundle . ':' . $entity_id],
+          ],
         ];
       }
     }

@@ -3,6 +3,8 @@ description: 'Flexible voting options for content entity types'
 core: 8.x
 package: Voting
 dependencies:
+  - node
+  - views
   - votingapi
 project: rate
 type: module
