@@ -25,12 +25,12 @@ function rate_entity_extra_field_info() {
   if (!empty($enabled_types_bundles)) {
     foreach ($enabled_types_bundles as $entity_type_id => $bundles) {
       foreach ($bundles as $bundle) {
-        $extra[$entity_type_id][$bundle]['display']['rate_vote_widget'] = array(
+        $extra[$entity_type_id][$bundle]['display']['rate_vote_widget'] = [
           'label' => t('Rate Vote Widget'),
           'description' => t('Displays the rate voting widget selected from the settings page.'),
           'weight' => 100,
           'visible' => TRUE,
-        );
+        ];
       }
     }
   }
@@ -84,16 +84,16 @@ function rate_menu_local_tasks_alter(&$data, $route_name) {
  * Implements hook_theme().
  */
 function rate_theme($existing, $type, $theme, $path) {
-  return array(
+  return [
     // Templates for default widget types.
-    'rate_template_info_description' => array(
+    'rate_template_info_description' => [
       'variables' => [
         'info' => '',
         'description' => '',
       ],
       'template' => 'rate-template-info-description',
-    ),
-    'rate_template_thumbs_up' => array(
+    ],
+    'rate_template_thumbs_up' => [
       'variables' => [
         'up_votes' => 0,
         'use_ajax' => FALSE,
@@ -103,8 +103,8 @@ function rate_theme($existing, $type, $theme, $path) {
         'entity_type_id' => NULL,
       ],
       'template' => 'rate-template-thumbs-up',
-    ),
-    'rate_template_thumbs_up_down' => array(
+    ],
+    'rate_template_thumbs_up_down' => [
       'variables' => [
         'up_votes' => 0,
         'down_votes' => 0,
@@ -115,7 +115,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'entity_type_id' => NULL,
       ],
       'template' => 'rate-template-thumbs-up-down',
-    ),
+    ],
     'rate_template_number_up_down' => [
       'variables' => [
         'up_votes' => 0,
@@ -128,7 +128,7 @@ function rate_theme($existing, $type, $theme, $path) {
       ],
       'template' => 'rate-template-number-up-down',
     ],
-    'rate_template_fivestar' => array(
+    'rate_template_fivestar' => [
       'variables' => [
         'star1_votes' => 0,
         'star2_votes' => 0,
@@ -142,8 +142,8 @@ function rate_theme($existing, $type, $theme, $path) {
         'entity_type_id' => NULL,
       ],
       'template' => 'rate-template-fivestar',
-    ),
-    'rate_template_yesno' => array(
+    ],
+    'rate_template_yesno' => [
       'variables' => [
         'up_votes' => 0,
         'down_votes' => 0,
@@ -154,8 +154,8 @@ function rate_theme($existing, $type, $theme, $path) {
         'entity_type_id' => NULL,
       ],
       'template' => 'rate-template-yesno',
-    ),
-  );
+    ],
+  ];
 }
 
 /**

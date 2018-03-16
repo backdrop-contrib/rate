@@ -256,10 +256,10 @@ You may use the following snippets in the template:
 * Print a button for a single option:
 
     <?php
-    print theme('rate_button', array(
+    print theme('rate_button', [
       'text' => $links[0]['text'],
       'href' => $links[0]['href'],
-      'class' => "extra-class")
+      'class' => "extra-class"]
     );
     ?>
 
@@ -267,15 +267,15 @@ You may use the following snippets in the template:
   configuration you will have:
 
     <?php
-    print theme('rate_button', array(
+    print theme('rate_button', [
       'text' => $links[0]['text'],
       'href' => $links[0]['href'],
-      'class' => "extra-class")
+      'class' => "extra-class"]
     );
-    print theme('rate_button', array(
+    print theme('rate_button', [
       'text' => $links[1]['text'],
       'href' => $links[1]['href'],
-      'class' => "extra-class")
+      'class' => "extra-class"]
     );
     ?>
 

@@ -100,7 +100,7 @@ class RateBotDetector {
    * Save IP address as a bot.
    */
   private function registerBot() {
-    $this->database->insert('rate_bot_ip')->fields(array('ip' => $this->ip))->execute();
+    $this->database->insert('rate_bot_ip')->fields(['ip' => $this->ip])->execute();
   }
 
   /**
@@ -111,7 +111,7 @@ class RateBotDetector {
    */
   protected function checkIp() {
     return (bool) $this->database->select('rate_bot_ip', 'rbi')
-      ->fields('rbi', array('id'))
+      ->fields('rbi', ['id'])
       ->condition('rbi.ip', $this->ip)
       ->range(0, 1)
       ->execute()
@@ -126,7 +126,7 @@ class RateBotDetector {
    */
   protected function checkAgent() {
     $sql = 'SELECT 1 FROM {rate_bot_agent} WHERE :agent LIKE pattern LIMIT 1';
-    return (bool) $this->database->query($sql, array(':agent' => $this->agent))->fetchField();
+    return (bool) $this->database->query($sql, [':agent' => $this->agent])->fetchField();
   }
 
   /**
@@ -140,7 +140,7 @@ class RateBotDetector {
    */
   protected function checkThreshold($interval) {
     $sql = 'SELECT COUNT(*) FROM {votingapi_vote} WHERE vote_source = :ip AND timestamp > :time';
-    return $this->database->query($sql, array(':ip' => $this->ip, ':time' => REQUEST_TIME - $interval))->fetchField();
+    return $this->database->query($sql, [':ip' => $this->ip, ':time' => REQUEST_TIME - $interval])->fetchField();
   }
 
   /**
@@ -157,7 +157,7 @@ class RateBotDetector {
       $uri = "http://botscout.com/test/?ip=$this->ip&key=$key";
 
       try {
-        $response = $this->httpClient->get($uri, array('headers' => array('Accept' => 'text/plain')));
+        $response = $this->httpClient->get($uri, ['headers' => ['Accept' => 'text/plain']]);
         $data = (string) $response->getBody();
         $status_code = $response->getStatusCode();
         if (!empty($data) && $status_code == 200) {

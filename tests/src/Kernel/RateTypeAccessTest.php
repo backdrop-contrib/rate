@@ -36,11 +36,11 @@ class RateTypeAccessTest extends KernelTestBase {
    *
    * @var string[]
    */
-  protected static $configSchemaCheckerExclusions = array(
+  protected static $configSchemaCheckerExclusions = [
     // Following are used to test lack of or partial schema. Where partial
     // schema is provided, that is explicitly tested in specific tests.
     'views.view.rate_results',
-  );
+  ];
 
   /**
    * Access handler.
@@ -93,7 +93,7 @@ class RateTypeAccessTest extends KernelTestBase {
     // The following rate types are defined by the Rate module.
     // In rate_vote_type_access(), permission to view vote types with these
     // IDs is granted for users with the 'view rate results page' permission.
-    $rate_types = array(
+    $rate_types = [
       'down',
       'up',
       'star1',
@@ -101,7 +101,7 @@ class RateTypeAccessTest extends KernelTestBase {
       'star3',
       'star4',
       'star5',
-    );
+    ];
 
     $vote_type_storage = $this->container->get('entity_type.manager')->getStorage('vote_type');
 
@@ -122,7 +122,7 @@ class RateTypeAccessTest extends KernelTestBase {
         $this->accessHandler->access($vote_type, 'view', $this->logged_in_user),
         $this->t(
           'Logged in user can see vote of type @rate_type',
-          array('@rate_type' => $rate_type)
+          ['@rate_type' => $rate_type]
         )
       );
 
@@ -131,7 +131,7 @@ class RateTypeAccessTest extends KernelTestBase {
         $this->accessHandler->access($vote_type, 'view', $this->anonymous_user),
         $this->t(
           'Anonymous user cannot see vote of type @rate_type',
-          array('@rate_type' => $rate_type)
+          ['@rate_type' => $rate_type]
         )
       );
     }
@@ -144,7 +144,7 @@ class RateTypeAccessTest extends KernelTestBase {
       $this->accessHandler->access($fake_vote_type, 'view', $this->logged_in_user),
       $this->t(
         'Logged in user cannot see vote of type @rate_type',
-        array('@rate_type' => $fake_vote_type->id())
+        ['@rate_type' => $fake_vote_type->id()]
       )
     );
 
@@ -152,7 +152,7 @@ class RateTypeAccessTest extends KernelTestBase {
       $this->accessHandler->access($fake_vote_type, 'view', $this->anonymous_user),
       $this->t(
         'Anonymous user cannot see vote of type @rate_type',
-        array('@rate_type' => $fake_vote_type->id())
+        ['@rate_type' => $fake_vote_type->id()]
       )
     );
   }
