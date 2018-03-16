@@ -82,22 +82,22 @@ class RateSettingsForm extends ConfigFormBase implements ContainerInjectionInter
 
     $form['widget_type'] = [
       '#type' => 'select',
-      '#title' => t('Widget Type'),
+      '#title' => $this->t('Widget Type'),
       '#options' => $widget_type_options,
       '#default_value' => $config->get('widget_type', 'number_up_down'),
     ];
 
     $form['use_ajax'] = [
       '#type' => 'checkbox',
-      '#title' => t('Use AJAX'),
+      '#title' => $this->t('Use AJAX'),
       '#default_value' => $config->get('use_ajax', FALSE),
-      '#description' => t('Record vote via AJAX.'),
+      '#description' => $this->t('Record vote via AJAX.'),
     ];
 
     $form['bot'] = [
       '#type' => 'fieldset',
-      '#title' => t('Bot detection'),
-      '#description' => t('Bots can be automatically banned from voting if they rate more than a given amount of votes within one minute or hour. This threshold is configurable below. Votes from the same IP-address will be ignored forever after reaching this limit.'),
+      '#title' => $this->t('Bot detection'),
+      '#description' => $this->t('Bots can be automatically banned from voting if they rate more than a given amount of votes within one minute or hour. This threshold is configurable below. Votes from the same IP-address will be ignored forever after reaching this limit.'),
       '#collapsbile' => FALSE,
       '#collapsed' => FALSE,
     ];
@@ -112,34 +112,34 @@ class RateSettingsForm extends ConfigFormBase implements ContainerInjectionInter
       500,
       1000,
     ]);
-    $threshold_options[0] = t('disable');
+    $threshold_options[0] = $this->t('disable');
 
     $form['bot']['bot_minute_threshold'] = [
       '#type' => 'select',
-      '#title' => t('1 minute threshold'),
+      '#title' => $this->t('1 minute threshold'),
       '#options' => $threshold_options,
       '#default_value' => $config->get('bot_minute_threshold', 25),
     ];
 
     $form['bot']['bot_hour_threshold'] = [
       '#type' => 'select',
-      '#title' => t('1 hour threshold'),
+      '#title' => $this->t('1 hour threshold'),
       '#options' => $threshold_options,
       '#default_value' => $config->get('bot_hour_threshold', 250),
     ];
 
     $form['bot']['botscout_key'] = [
       '#type' => 'textfield',
-      '#title' => t('BotScout.com API key'),
+      '#title' => $this->t('BotScout.com API key'),
       '#default_value' => $config->get('botscout_key', ''),
-      '#description' => t('Rate will check the voters IP against the BotScout database if it has an API key. You can request a key at %url.', ['%url' => 'http://botscout.com/getkey.htm']),
+      '#description' => $this->t('Rate will check the voters IP against the BotScout database if it has an API key. You can request a key at %url.', ['%url' => 'http://botscout.com/getkey.htm']),
     ];
 
     $form['rate_types_enabled'] = [
       '#type' => 'details',
       '#open' => TRUE,
-      '#title' => t('Entity types with Rate widgets enabled:'),
-      '#description' => t('If you disable any type here, already existing data will remain untouched.'),
+      '#title' => $this->t('Entity types with Rate widgets enabled:'),
+      '#description' => $this->t('If you disable any type here, already existing data will remain untouched.'),
     ];
 
     $entity_types = $this->entityTypeManager->getDefinitions();
@@ -197,22 +197,22 @@ class RateSettingsForm extends ConfigFormBase implements ContainerInjectionInter
         $data = (string) $response->getBody();
         $status_code = $response->getStatusCode();
         if (empty($data)) {
-          drupal_set_message(t('An empty response was returned from botscout.'), 'warning');
+          drupal_set_message($this->t('An empty response was returned from botscout.'), 'warning');
         }
         elseif ($status_code == 200) {
           if ($data{0} == 'Y' || $data{0} == 'N') {
-            drupal_set_message(t('Rate has succesfully contacted the BotScout server.'));
+            drupal_set_message($this->t('Rate has succesfully contacted the BotScout server.'));
           }
           else {
-            $form_state->setErrorByName('botscout_key', t('Invalid API-key.'));
+            $form_state->setErrorByName('botscout_key', $this->t('Invalid API-key.'));
           }
         }
         else {
-          drupal_set_message(t('Rate was unable to contact the BotScout server.'), 'warning');
+          drupal_set_message($this->t('Rate was unable to contact the BotScout server.'), 'warning');
         }
       }
       catch (RequestException $e) {
-        drupal_set_message(t('An error occurred contacting BotScout.'), 'warning');
+        drupal_set_message($this->t('An error occurred contacting BotScout.'), 'warning');
         watchdog_exception('rate', $e);
       }
     }

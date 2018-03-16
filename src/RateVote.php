@@ -125,7 +125,7 @@ class RateVote implements ContainerInjectionInterface {
         $this->resultManager->recalculateResults($entity_type_id, $entity_id, $vote_type_id);
 
         if ($show_messages) {
-          drupal_set_message(t('Your :type vote was added.', [
+          drupal_set_message($this->t('Your :type vote was added.', [
             ':type' => $vote_type_id,
           ]));
         }
@@ -133,7 +133,7 @@ class RateVote implements ContainerInjectionInterface {
       // Otherwise, inform user of previous vote.
       elseif ($show_messages) {
         drupal_set_message(
-          t('You are not allowed to vote the same way multiple times.'), 'warning'
+          $this->t('You are not allowed to vote the same way multiple times.'), 'warning'
         );
       }
     }
@@ -173,14 +173,14 @@ class RateVote implements ContainerInjectionInterface {
 
         if ($show_messages) {
           drupal_set_message(
-            t('Your vote was canceled.'), 'status'
+            $this->t('Your vote was canceled.'), 'status'
           );
         }
       }
       elseif ($show_messages) {
         // Otherwise, inform user of previous vote.
         drupal_set_message(
-          t('A previous vote was not found.'), 'warning'
+          $this->t('A previous vote was not found.'), 'warning'
         );
       }
     }
