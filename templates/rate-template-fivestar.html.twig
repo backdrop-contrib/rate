@@ -21,7 +21,7 @@
           {% if has_voted or not can_vote %}
             <div{{ star.star_attributes }}>{{ 'Star'|t }}</div>
           {% else %}
-            <a {{ star.star_attributes }} href="{{ star.vote_url }}">{{ 'Star'|t }}</a>
+            <a {{ star.star_attributes }} href="{{ star.star_link }}">{{ 'Star'|t }}</a>
           {% endif %}
         </li>
       {% endfor %}
