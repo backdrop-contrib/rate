@@ -26,8 +26,9 @@
         </li>
       {% endfor %}
     </ul>
-  {% if undo %}
-    <div{{ undo_attributes }}>{{ undo }}</div>
-  {% endif %}
-  {{ info_description }}
+    {% if undo %}
+      <div{{ undo_attributes }}>{{ undo }}</div>
+    {% endif %}
+    {{ info_description }}
+  </div>
 </div>
