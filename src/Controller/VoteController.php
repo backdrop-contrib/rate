@@ -163,19 +163,18 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
    *
    * @param string $entity_type_id
    *   Entity type ID such as node.
-   * @param string $vote_type_id
-   *   Vote type id.
    * @param int $entity_id
    *   Entity id of the entity type.
+   * @param string $vote_type_id
+   *   Vote type id.
+   * @param int $value
+   *   The vote.
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   Request object that contains redirect path.
-   *
-   * @return \Symfony\Component\HttpFoundation\RedirectResponse
-   *   Redirect to path provided in request.
    */
-  public function vote($entity_type_id, $vote_type_id, $entity_id, Request $request) {
+  public function vote($entity_type_id, $entity_id, $vote_type_id, $value, Request $request) {
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($entity_id);
-    $this->rateVote->vote($entity_type_id, $vote_type_id, $entity_id, !$this->config->get('use_ajax'));
+    $this->rateVote->vote($entity_type_id, $entity_id, $vote_type_id, $value, !$this->config->get('use_ajax'));
     $this->invalidateCacheTags($entity_type_id, $entity_id, $entity->bundle());
     return $this->prepareResponse($entity_type_id, $entity_id, $entity->bundle(), $request);
   }

@@ -21,17 +21,6 @@ class RateWidgetTest extends BrowserTestBase {
   ];
 
   /**
-   * {@inheritdoc}
-   *
-   * Something is quite off with the view schema bundled with this module.
-   *
-   * @todo Remove this when that is fixed.
-   *
-   * @see https://www.drupal.org/node/2879568
-   */
-  protected $strictConfigSchema = FALSE;
-
-  /**
    * Web users.
    *
    * @var \Drupal\user\UserInterface[]
@@ -93,6 +82,7 @@ class RateWidgetTest extends BrowserTestBase {
 
     // Vote on the item.
     $this->clickLink(t('Up'));
+    $this->drupalGet($this->testEntity->toUrl());
     $this->assertSession()->pageTextContains('+1');
     $this->assertSession()->linkExists(t('Undo'));
 

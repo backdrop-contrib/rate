@@ -94,13 +94,8 @@ class RateTypeAccessTest extends KernelTestBase {
     // In rate_vote_type_access(), permission to view vote types with these
     // IDs is granted for users with the 'view rate results page' permission.
     $rate_types = [
-      'down',
-      'up',
-      'star1',
-      'star2',
-      'star3',
-      'star4',
-      'star5',
+      'updown',
+      'fivestar',
     ];
 
     $vote_type_storage = $this->container->get('entity_type.manager')->getStorage('vote_type');

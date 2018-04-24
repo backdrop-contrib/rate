@@ -1,4 +1,0 @@
-id: up
-label: 'Like/Up/Yes vote'
-value_type: 'points'
-description: 'A positive vote.'

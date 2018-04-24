@@ -95,7 +95,7 @@ function rate_theme($existing, $type, $theme, $path) {
     ],
     'rate_template_thumbs_up' => [
       'variables' => [
-        'up_votes' => 0,
+        'results' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
         'has_voted' => FALSE,
@@ -106,8 +106,7 @@ function rate_theme($existing, $type, $theme, $path) {
     ],
     'rate_template_thumbs_up_down' => [
       'variables' => [
-        'up_votes' => 0,
-        'down_votes' => 0,
+        'results' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
         'has_voted' => FALSE,
@@ -118,8 +117,7 @@ function rate_theme($existing, $type, $theme, $path) {
     ],
     'rate_template_number_up_down' => [
       'variables' => [
-        'up_votes' => 0,
-        'down_votes' => 0,
+        'results' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
         'has_voted' => FALSE,
@@ -130,11 +128,7 @@ function rate_theme($existing, $type, $theme, $path) {
     ],
     'rate_template_fivestar' => [
       'variables' => [
-        'star1_votes' => 0,
-        'star2_votes' => 0,
-        'star3_votes' => 0,
-        'star4_votes' => 0,
-        'star5_votes' => 0,
+        'results' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
         'has_voted' => FALSE,
@@ -145,8 +139,7 @@ function rate_theme($existing, $type, $theme, $path) {
     ],
     'rate_template_yesno' => [
       'variables' => [
-        'up_votes' => 0,
-        'down_votes' => 0,
+        'results' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
         'has_voted' => FALSE,
@@ -173,13 +166,12 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
     }
   }
 
-  $score = $variables['up_votes'] - $variables['down_votes'];
+  $score = isset($variables['results']['updown']['vote_sum']) ? $variables['results']['updown']['vote_sum'] : 0;
   if ($score > 0) {
     $score = '+' . $score;
     $score_class = 'positive';
   }
   elseif ($score < 0) {
-    $score = $score;
     $score_class = 'negative';
   }
   else {
@@ -190,6 +182,9 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
   $variables['score_attributes']['class'] = [];
   $variables['score_attributes']['class'][] = 'rate-number-up-down-rating';
   $variables['score_attributes']['class'][] = $score_class;
+
+  $variables['up_votes'] = isset($variables['results']['rate_count_up']) ? $variables['results']['rate_count_up'] : 0;
+  $variables['down_votes'] = isset($variables['results']['updown']['vote_count']) ? $variables['results']['updown']['vote_count'] - $variables['up_votes'] : 0;
 
   _rate_set_common_theme_variables($variables);
   _rate_get_undo_link($variables);
@@ -203,15 +198,7 @@ function template_preprocess_rate_template_fivestar(&$variables) {
   $variables['stars'] = [];
 
   // Calculate the score.
-  $score = 0;
-  $total_votes = 0;
-  for ($counter = 1; $counter < 6; $counter++) {
-    $score += ($variables['star' . $counter . '_votes'] * $counter);
-    $total_votes += $variables['star' . $counter . '_votes'];
-  }
-  if ($score > 0 && $total_votes > 0) {
-    $score = round($score / $total_votes);
-  }
+  $score = isset($variables['results']['updown']['vote_average']) ? $variables['results']['updown']['vote_average'] : 0;
 
   // Set up the links.
   for ($counter = 1; $counter < 6; $counter++) {
@@ -232,7 +219,8 @@ function template_preprocess_rate_template_fivestar(&$variables) {
 
     $variables['stars'][$counter]['star_link'] = Url::fromRoute('rate.vote', [
       'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'star' . $counter,
+      'vote_type_id' => 'fivestar',
+      'value' => $counter,
       'entity_id' => $variables['entity_id'],
       'destination' => drupal_get_destination()['destination'],
     ]);
@@ -266,7 +254,9 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
   $variables['percent_attributes']['class'] = [];
   $variables['percent_attributes']['class'][] = 'percent';
 
-  $total_votes = $variables['up_votes'] + $variables['down_votes'];
+  $total_votes = isset($variables['results']['updown']['vote_count']) ? $variables['results']['updown']['vote_count']: 0;
+  $variables['up_votes'] = isset($variables['results']['rate_count_up']) ? $variables['results']['rate_count_up'] : 0;
+  $variables['down_votes'] = $total_votes - $variables['up_votes'];
 
   if (!empty($total_votes)) {
     $variables['up_percent'] = round(($variables['up_votes'] / $total_votes) * 100);
@@ -298,6 +288,8 @@ function template_preprocess_rate_template_thumbs_up(&$variables) {
   $variables['score_attributes']['class'] = [];
   $variables['score_attributes']['class'][] = 'rate-score';
 
+  $variables['up_votes'] = isset($variables['results']['updown']['rate_count_up']) ? $variables['results']['updown']['rate_count_up'] : 0;
+
   _rate_set_common_theme_variables($variables);
   _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/thumbs-up';
@@ -324,11 +316,14 @@ function template_preprocess_rate_template_yesno(&$variables) {
     }
   }
 
+  $variables['up_votes'] = isset($variables['results']['rate_count_up']) ? $variables['results']['rate_count_up'] : 0;
+  $variables['down_votes'] = isset($variables['results']['updown']['vote_count']) ? $variables['results']['updown']['vote_count'] - $variables['up_votes'] : 0;
+
   $variables['score_attributes'] = new Attribute();
   $variables['score_attributes']['class'] = [];
   $variables['score_attributes']['class'][] = 'rate-yesno-votes';
 
-  _rate_set_common_theme_variables($variables, TRUE, 'yes', 'no');
+  _rate_set_common_theme_variables($variables, TRUE);
   _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/yesno';
 }
@@ -367,14 +362,16 @@ function _rate_set_common_theme_variables(&$variables, $generate_links = TRUE) {
   if ($generate_links) {
     $variables['up_url'] = Url::fromRoute('rate.vote', [
       'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'up',
+      'vote_type_id' => 'updown',
+      'value' => 1,
       'entity_id' => $variables['entity_id'],
       'destination' => drupal_get_destination()['destination'],
     ]);
 
     $variables['down_url'] = Url::fromRoute('rate.vote', [
       'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'down',
+      'vote_type_id' => 'updown',
+      'value' => -1,
       'entity_id' => $variables['entity_id'],
       'destination' => drupal_get_destination()['destination'],
     ]);
@@ -402,15 +399,7 @@ function rate_vote_type_access(EntityInterface $vote_type, $operation, AccountIn
   // If the user has the 'view rate results page' permission, we grant 'view'
   // access to all of the vote_type configuration entities defined
   // by the Rate module.
-  $rate_types = [
-    'down',
-    'up',
-    'star1',
-    'star2',
-    'star3',
-    'star4',
-    'star5',
-  ];
+  $rate_types = ['updown', 'fivestar'];
 
   // Allow users with the permission 'view rate results page' to view metadata
   // about any of the vote types provided by this module.

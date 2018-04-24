@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\votingapi\VoteResultFunctionManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -13,6 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Returns responses for Rate routes.
  */
 class RateVote implements ContainerInjectionInterface {
+  use StringTranslationTrait;
 
   /**
    * The entity type manager.
@@ -93,18 +95,21 @@ class RateVote implements ContainerInjectionInterface {
    *
    * @param string $entity_type_id
    *   Entity type ID such as node.
-   * @param string $vote_type_id
-   *   Vote type id.
    * @param int $entity_id
    *   Entity id of the entity type.
+   * @param string $vote_type_id
+   *   Vote type id.
+   * @param int $value
+   *   The vote value.
    * @param bool $show_messages
    *   If TRUE, standard Drupal message will be set.
    */
-  public function vote($entity_type_id, $vote_type_id, $entity_id, $show_messages = TRUE) {
+  public function vote($entity_type_id, $entity_id, $vote_type_id, $value, $show_messages = TRUE) {
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($entity_id);
     $is_bot_vote = $this->botDetector->checkIsBot();
 
     if (!$is_bot_vote && $this->accountProxy->hasPermission('cast rate vote on ' . $entity_type_id . ' of ' . $entity->bundle())) {
+      /** @var \Drupal\votingapi\VoteStorageInterface $vote_storage */
       $vote_storage = $this->entityTypeManager->getStorage('vote');
       $vote_ids = $vote_storage->getUserVotes(
         $this->accountProxy->id(),
@@ -115,12 +120,14 @@ class RateVote implements ContainerInjectionInterface {
 
       // If user hasn't voted, save the vote.
       if (empty($vote_ids)) {
+        /** @var \Drupal\votingapi\VoteTypeInterface $vote_type */
         $vote_type = $this->entityTypeManager->getStorage('vote_type')->load($vote_type_id);
-        $vote = $this->entityTypeManager->getStorage('vote')->create(['type' => $vote_type_id]);
+        /** @var \Drupal\votingapi\VoteInterface $vote */
+        $vote = $vote_storage->create(['type' => $vote_type_id]);
         $vote->setVotedEntityId($entity_id);
         $vote->setVotedEntityType($entity_type_id);
         $vote->setValueType($vote_type->getValueType());
-        $vote->setValue(1);
+        $vote->setValue($value);
         $vote->save();
         $this->resultManager->recalculateResults($entity_type_id, $entity_id, $vote_type_id);
 

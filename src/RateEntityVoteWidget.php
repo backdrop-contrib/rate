@@ -77,7 +77,7 @@ class RateEntityVoteWidget {
    */
   public function buildRateVotingWidget($entity_id, $entity_type_id, $bundle) {
     $output = [];
-    $widget_type = $this->config->get('widget_type', 'number_up_down');
+    $widget_type = $this->config->get('widget_type');
     $rate_theme = 'rate_template_' . $widget_type;
     $enabled_types_bundles = $this->config->get('enabled_types_bundles');
 
@@ -94,57 +94,21 @@ class RateEntityVoteWidget {
       $has_voted = (!empty($vote_ids)) ? TRUE : FALSE;
       $user_can_vote = $this->accountProxy->hasPermission('cast rate vote on ' . $entity_type_id . ' of ' . $bundle);
 
-      // Get voting results.
-      $results = $this->resultManager->getResults($entity_type_id, $entity_id);
-
-      // Set vote type results for the entity.
-      $votes_types = ['up', 'down', 'star1', 'star2', 'star3', 'star4', 'star5'];
-      $vote_sums = [];
-      foreach ($votes_types as $vote_type) {
-        $vote_sums[$vote_type] = 0;
-      }
-      foreach ($results as $vote_type => $vote_sum) {
-        $vote_sums[$vote_type] = $vote_sum['vote_sum'];
-      }
-
       // Set the theme variables.
-      if ($this->config->get('widget_type') == 'fivestar') {
-        $output['votingapi_links'] = [
-          '#theme' => $rate_theme,
-          '#star1_votes' => $vote_sums['star1'],
-          '#star2_votes' => $vote_sums['star2'],
-          '#star3_votes' => $vote_sums['star3'],
-          '#star4_votes' => $vote_sums['star4'],
-          '#star5_votes' => $vote_sums['star5'],
-          '#use_ajax' => $use_ajax,
-          '#can_vote' => $user_can_vote,
-          '#has_voted' => $has_voted,
-          '#entity_id' => $entity_id,
-          '#entity_type_id' => $entity_type_id,
-          '#attributes' => ['class' => ['links', 'inline']],
-          '#cache' => [
-            'contexts' => ['user'],
-            'tags' => ['vote:' . $bundle . ':' . $entity_id],
-          ],
-        ];
-      }
-      else {
-        $output['votingapi_links'] = [
-          '#theme' => $rate_theme,
-          '#up_votes' => $vote_sums['up'],
-          '#down_votes' => $vote_sums['down'],
-          '#use_ajax' => $use_ajax,
-          '#can_vote' => $user_can_vote,
-          '#has_voted' => $has_voted,
-          '#entity_id' => $entity_id,
-          '#entity_type_id' => $entity_type_id,
-          '#attributes' => ['class' => ['links', 'inline']],
-          '#cache' => [
-            'contexts' => ['user'],
-            'tags' => ['vote:' . $bundle . ':' . $entity_id],
-          ],
-        ];
-      }
+      $output['votingapi_links'] = [
+        '#theme' => $rate_theme,
+        '#results' => $this->resultManager->getResults($entity_type_id, $entity_id),
+        '#use_ajax' => $use_ajax,
+        '#can_vote' => $user_can_vote,
+        '#has_voted' => $has_voted,
+        '#entity_id' => $entity_id,
+        '#entity_type_id' => $entity_type_id,
+        '#attributes' => ['class' => ['links', 'inline']],
+        '#cache' => [
+          'contexts' => ['user'],
+          'tags' => ['vote:' . $bundle . ':' . $entity_id],
+        ],
+      ];
     }
 
     return $output;
