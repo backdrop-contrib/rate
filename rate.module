@@ -90,17 +90,17 @@ function rate_menu() {
 
   $menu[RATE_PATH_ADMIN_PAGE_ADD] = array(
     'title' => 'Add widget',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('rate_widget_form'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
     'file' => 'rate.admin.inc',
-  'weight' => 1,
+    'weight' => 1,
   );
 
   $menu[RATE_PATH_ADMIN_PAGE_EDIT] = array(
     'title' => 'Edit widget',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('rate_widget_form', 3),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
@@ -109,7 +109,7 @@ function rate_menu() {
 
   $menu[RATE_PATH_ADMIN_PAGE_DELETE] = array(
     'title' => 'Delete widget',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('rate_widget_delete_form', 3),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
@@ -118,7 +118,7 @@ function rate_menu() {
 
   $menu[RATE_PATH_ADMIN_PAGE_TEMPLATE] = array(
     'title' => 'Switch template',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('rate_choose_template_form', 3),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
@@ -128,7 +128,7 @@ function rate_menu() {
   $menu[RATE_PATH_AHAH] = array(
     'page callback' => 'rate_vote_ahah',
     'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
 
   $menu[RATE_PATH_RESULTS_PAGE] = array(
@@ -148,10 +148,10 @@ function rate_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
-  
+
   $menu[RATE_PATH_ADMIN_PAGE_SETTINGS] = array(
     'title' => 'Settings',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('rate_settings_form'),
     'access arguments' => array('administer site settings'),
     'type' => MENU_LOCAL_TASK,
@@ -182,7 +182,9 @@ function rate_ctools_plugin_directory($module, $plugin) {
  * @return array
  */
 function rate_get_active_widgets($content_type, $type, $view_mode = 'full') {
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   $active = array();
   foreach ($widgets as $widget_id => $widget) {
     if ($content_type == 'node' && in_array($type, $widget->node_types)) {
@@ -210,20 +212,21 @@ function rate_get_active_widgets($content_type, $type, $view_mode = 'full') {
  */
 function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RATE_FULL, $include_div = TRUE, $just_voted = FALSE, $displayed = NULL) {
   global $user;
-
   // Check input.
   if (!is_numeric($widget_id) || empty($content_type) || !is_numeric($content_id)) {
     return NULL;
   }
 
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   $widget = $widgets[$widget_id];
   _rate_check_widget($widget);
 
   // Determine if the user may vote.
   $entities = entity_load($content_type, array($content_id));
   $node = $entities[$content_id];
-  
+
   $permission_status = _rate_check_permissions($widget, $node);
 
   // This option should be available, check for legacy.
@@ -248,8 +251,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     'content_type' => $content_type,
     'content_id' => $content_id,
   );
-  drupal_alter('rate_widget', $widget, $context);
-
+  backdrop_alter('rate_widget', $widget, $context);
   $div_id = "rate-$content_type-$content_id-$widget_id-$mode";
   $theme_name = str_replace('-', '_', $widget->name);
   $theme = array('rate_widget__' . $theme_name, 'rate_widget');
@@ -300,14 +302,14 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   }
 
   // Add generic javascript.
-  $dest = drupal_get_destination();
-  drupal_add_js(array(
+  $dest = backdrop_get_destination();
+  backdrop_add_js(array(
     'rate' => array(
       'basePath' => url('rate/vote/js'),
       'destination' => $dest['destination'],
-    )
+    ),
   ), array('type' => 'setting'));
-  drupal_add_js(drupal_get_path('module', 'rate') . '/rate.js');
+  backdrop_add_js(backdrop_get_path('module', 'rate') . '/rate.js');
 
   $links = array();
   foreach ($widget->options as $option) {
@@ -316,7 +318,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     $token = rate_get_token($id);
     if (isset($_GET['rate']) && $_GET['rate'] == $token) {
       rate_save_vote($widget, $content_type, $content_id, $option[0]);
-      drupal_goto($_GET['q'], array('query' => _rate_get_query()));
+      backdrop_goto($_GET['q'], array('query' => _rate_get_query()));
     }
     isset($widget->translate) or $widget->translate = TRUE;
     $link_text = $widget->translate ? t($option[1]) : $option[1];
@@ -340,11 +342,11 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
   }
 
   if (isset($widget->css)) {
-    drupal_add_css($widget->css);
+    backdrop_add_css($widget->css);
   }
 
   if (isset($widget->js)) {
-    drupal_add_js($widget->js);
+    backdrop_add_js($widget->js);
   }
 
   if ($widget->mode == RATE_CLOSED && ($mode == RATE_COMPACT || $mode == RATE_DISABLED || $mode == RATE_COMPACT_DISABLED)) {
@@ -374,8 +376,7 @@ function rate_generate_widget($widget_id, $content_type, $content_id, $mode = RA
     $id = "rate-$widget_id-$content_type-$content_id";
     $token = _rate_get_token($id);
     $classes[] = 'rate-' . $token;
-    return
-      '<div class="' . implode(' ', $classes) . ' ' . $div_id . '" id="' . drupal_html_id($div_id) . '">' .
+    return '<div class="' . implode(' ', $classes) . ' ' . $div_id . '" id="' . backdrop_html_id($div_id) . '">' .
       $widget_html .
       '</div>';
   }
@@ -444,9 +445,9 @@ function _rate_check_permissions($widget, $node = NULL) {
 
 /**
  * Get entity id for source translation.
- * 
+ *
  * This function is safe for use with unsupported entity types.
- * 
+ *
  * @param string $entity_type
  * @param int $entity_id
  * @return int
@@ -479,7 +480,9 @@ function _rate_get_source_translation($entity_type, $entity_id) {
 function rate_get_results($content_type, $content_id, $widget_id) {
   global $user;
 
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   $widget = $widgets[$widget_id];
   $criteria = array(
     'entity_type' => $content_type,
@@ -487,7 +490,7 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     'tag' => $widget->tag,
     'value_type' => $widget->value_type,
   );
-  
+
   // Check if we should use the source translation.
   if ($widget->use_source_translation) {
     $criteria['entity_id'] = _rate_get_source_translation($criteria['entity_type'], $criteria['entity_id']);
@@ -537,13 +540,17 @@ function rate_get_results($content_type, $content_id, $widget_id) {
     $output['down_percent'] = 100 - $output['up_percent'];
   }
 
-  $criteria += array('uid' => $user->uid, 'value_type' => $widget->value_type);
+  $criteria += array(
+    'uid' => $user->uid,
+    'value_type' => $widget->value_type,
+  );
   if (!$user->uid) {
     $criteria += array('vote_source' => ip_address());
   }
   if ($user_vote = votingapi_select_votes($criteria)) {
     // Check the anonymous window. We should not display this vote when its anonymous and casted too long ago.
-    $anonymous_window = variable_get('votingapi_anonymous_window', 86400);
+    // TODO This variable was probably removed in Backdrop without replacement.
+    $anonymous_window = config_get('rate.settings', 'votingapi_anonymous_window', 86400);
     // Use a minimum of 5 seconds. Needed to get the anonymous vote directly after the user has voted.
     if ($anonymous_window != -1) {
       $anonymous_window = max(5, $anonymous_window);
@@ -582,20 +589,21 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     return;
   }
   $saved = TRUE;
-  
+
   module_load_include('inc', 'rate', 'rate.bots');
   if (rate_bots_is_blocked()) {
-    if (variable_get(RATE_VAR_BOT_RETROACTIVE, TRUE)) {
+    // TODO This variable was probably removed in Backdrop without replacement.
+    if (config_get('rate.settings', RATE_VAR_BOT_RETROACTIVE, TRUE)) {
       $ip = ip_address();
       if (!rate_bots_is_local($ip)) {
-        $queue = DrupalQueue::get('rate_delete_votes');
+        $queue = BackdropQueue::get('rate_delete_votes');
         $queue->createQueue();
         $queue->createItem($ip);
       }
     }
     return;
   }
-  
+
   // Check if we should use the source translation.
   if ($widget->use_source_translation) {
     $content_id = _rate_get_source_translation($content_type, $content_id);
@@ -604,9 +612,9 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
   // Determine if the user may vote.
   $entities = entity_load($content_type, array($content_id));
   $node = $entities[$content_id];
-  
+
   $permission_status = _rate_check_permissions($widget, $node);
-  
+
   // This option should be available, check for legacy.
   isset($widget->noperm_behaviour) or $widget->noperm_behaviour = RATE_NOPERM_REDIRECT_WITH_MESSAGE;
 
@@ -625,7 +633,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
           module_invoke_all('exit') & exit;
         }
         else {
-          drupal_goto('user/login-to-rate', array('query' => $query));
+          backdrop_goto('user/login-to-rate', array('query' => $query));
         }
 
         break;
@@ -637,7 +645,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
           module_invoke_all('exit') & exit;
         }
         else {
-          drupal_goto('user', array('query' => $query));
+          backdrop_goto('user', array('query' => $query));
         }
 
         break;
@@ -653,7 +661,7 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     'value' => $value,
     'tag' => $widget->tag,
   );
-  
+
   $criteria = NULL;
 
   // Call hook_rate_vote_alter().
@@ -665,8 +673,8 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
     'criteria' => &$criteria,
     'widget' => $widget,
   );
-  drupal_alter('rate_vote', $votes, $context);
-  
+  backdrop_alter('rate_vote', $votes, $context);
+
   if ($save) {
     votingapi_set_votes($votes, $criteria);
   }
@@ -689,20 +697,24 @@ function rate_save_vote($widget, $content_type, $content_id, $value, $ahah = FAL
       module_invoke_all('exit') & exit;
     }
     else {
-      drupal_goto($path, $query, $fragment);
+      backdrop_goto($path, $query, $fragment);
     }
   }
 }
 
 /*
-  Delete same up/down vote on second click
-  -----------------------------------------
-  Check to see if the vote already exists.
-  We also check to see if this feature is enabled.
+ Delete same up/down vote on second click
+ -----------------------------------------
+ Check to see if the vote already exists.
+ We also check to see if this feature is enabled.
 
-  If it exists and this feature is enabled then,
-  delete it and disable the saving of a new one.
-*/
+ If it exists and this feature is enabled then,
+ delete it and disable the saving of a new one.
+ */
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function rate_rate_vote_alter($votes, &$context) {
   // Make sure that this feature is enabled for the widget.
   if (!$context['widget']->delete_vote_on_second_click) {
@@ -717,7 +729,7 @@ function rate_rate_vote_alter($votes, &$context) {
   if (!empty($votes['entity_id'])) {
     $votes = array($votes);
   }
-  
+
   // Handle clearing out old votes if they exists.
   if (empty($criteria)) {
     // If the calling function didn't explicitly set criteria for vote deletion,
@@ -760,7 +772,7 @@ function rate_rate_vote_alter($votes, &$context) {
  * Implements hook_node_view().
  */
 function rate_node_view($node, $view_mode, $langcode = '') {
-  if ($view_mode != 'rss') {  
+  if ($view_mode != 'rss') {
     // Adding the form to the node view
     $widgets = rate_get_active_widgets('node', $node->type, $view_mode);
     foreach ($widgets as $widget_id => $widget) {
@@ -779,8 +791,9 @@ function rate_node_view($node, $view_mode, $langcode = '') {
       else {
         $node->content[$widget_name] = $widget_code;
       }
-    
-  }}
+
+    }
+  }
 }
 
 /**
@@ -832,7 +845,9 @@ function rate_vote_ahah() {
   $widget_id = (int) $_GET['widget_id'];
   $widget_mode = (int) $_GET['widget_mode'];
 
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   $widget = $widgets[$widget_id];
 
   // Process options.
@@ -857,7 +872,7 @@ function rate_vote_ahah() {
       rate_save_vote($widget, $content_type, $content_id, $value, TRUE);
     }
   }
-  
+
   print rate_generate_widget($widget_id, $content_type, $content_id, $widget_mode, TRUE, TRUE);
 
   module_invoke_all('exit') & exit;
@@ -891,7 +906,7 @@ function rate_rate_templates() {
     array(1, 'up'),
   );
   $templates['thumbs_up']->theme = 'rate_template_thumbs_up';
-  $templates['thumbs_up']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up/thumbs-up.css';
+  $templates['thumbs_up']->css = backdrop_get_path('module', 'rate') . '/templates/thumbs-up/thumbs-up.css';
   $templates['thumbs_up']->customizable = FALSE;
   $templates['thumbs_up']->translate = TRUE;
   $templates['thumbs_up']->template_title = t('Thumbs up');
@@ -903,7 +918,7 @@ function rate_rate_templates() {
     array(-1, 'down'),
   );
   $templates['thumbs_up_down']->theme = 'rate_template_thumbs_up_down';
-  $templates['thumbs_up_down']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up-down/thumbs-up-down.css';
+  $templates['thumbs_up_down']->css = backdrop_get_path('module', 'rate') . '/templates/thumbs-up-down/thumbs-up-down.css';
   $templates['thumbs_up_down']->customizable = FALSE;
   $templates['thumbs_up_down']->translate = TRUE;
   $templates['thumbs_up_down']->template_title = t('Thumbs up / down');
@@ -915,7 +930,7 @@ function rate_rate_templates() {
     array(-1, '-1'),
   );
   $templates['number_up_down']->theme = 'rate_template_number_up_down';
-  $templates['number_up_down']->css = drupal_get_path('module', 'rate') . '/templates/number-up-down/number-up-down.css';
+  $templates['number_up_down']->css = backdrop_get_path('module', 'rate') . '/templates/number-up-down/number-up-down.css';
   $templates['number_up_down']->customizable = FALSE;
   $templates['number_up_down']->translate = TRUE;
   $templates['number_up_down']->template_title = t('Number up / down');
@@ -930,8 +945,8 @@ function rate_rate_templates() {
     array(100, '5'),
   );
   $templates['fivestar']->theme = 'rate_template_fivestar';
-  $templates['fivestar']->css = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.css';
-  $templates['fivestar']->js = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.js';
+  $templates['fivestar']->css = backdrop_get_path('module', 'rate') . '/templates/fivestar/fivestar.css';
+  $templates['fivestar']->js = backdrop_get_path('module', 'rate') . '/templates/fivestar/fivestar.js';
   $templates['fivestar']->customizable = TRUE;
   $templates['fivestar']->translate = FALSE;
   $templates['fivestar']->template_title = t('Fivestar');
@@ -944,7 +959,7 @@ function rate_rate_templates() {
     array(3, 'angry'),
   );
   $templates['emotion']->theme = 'rate_template_emotion';
-  $templates['emotion']->css = drupal_get_path('module', 'rate') . '/templates/emotion/emotion.css';
+  $templates['emotion']->css = backdrop_get_path('module', 'rate') . '/templates/emotion/emotion.css';
   $templates['emotion']->customizable = TRUE;
   $templates['emotion']->translate = TRUE;
   $templates['emotion']->template_title = t('Emotion');
@@ -956,7 +971,7 @@ function rate_rate_templates() {
     array(2, 'no'),
   );
   $templates['yesno']->theme = 'rate_template_yesno';
-  $templates['yesno']->css = drupal_get_path('module', 'rate') . '/templates/yesno/yesno.css';
+  $templates['yesno']->css = backdrop_get_path('module', 'rate') . '/templates/yesno/yesno.css';
   $templates['yesno']->customizable = TRUE;
   $templates['yesno']->translate = TRUE;
   $templates['yesno']->template_title = t('Yes / no');
@@ -968,7 +983,7 @@ function rate_rate_templates() {
  * Implements hook_init().
  */
 function rate_init() {
-  drupal_add_css(drupal_get_path('module', 'rate') . '/rate.css');
+  backdrop_add_css(backdrop_get_path('module', 'rate') . '/rate.css');
 }
 
 /**
@@ -998,6 +1013,10 @@ function rate_votingapi_views_formatters($details = array()) {
   }
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
   if ($field->view->base_table != 'node' && $field->view->base_table != 'comment') {
     return '';
@@ -1046,7 +1065,9 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
   }
 
   // Loop through all the widgets and search for a suitable widget to display.
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   foreach ($widgets as $widget_id => $widget) {
     if ((!isset($tag) || $tag == $widget->tag) &&
         (!isset($value_type) || $value_type == $widget->value_type) &&
@@ -1060,14 +1081,26 @@ function rate_views_widget($value, $field, $columns, $mode = RATE_FULL) {
   return '';
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function rate_views_widget_disabled($value, $field, $columns) {
   return rate_views_widget($value, $field, $columns, RATE_DISABLED);
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function rate_views_widget_compact($value, $field, $columns) {
   return rate_views_widget($value, $field, $columns, RATE_COMPACT);
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function rate_views_widget_compact_disabled($value, $field, $columns) {
   return rate_views_widget($value, $field, $columns, RATE_COMPACT_DISABLED);
 }
@@ -1075,7 +1108,7 @@ function rate_views_widget_compact_disabled($value, $field, $columns) {
 /**
  * Get a token for the voting button.
  *
- * This is a wrapper around drupal_get_token() to make this compatible with
+ * This is a wrapper around backdrop_get_token() to make this compatible with
  * Pressflow. This function uses session_id(), which will generate a different
  * id for each request from anonymous users when using Pressflow. Tokens will
  * never match in this case, thus the votes are not cast.
@@ -1086,10 +1119,10 @@ function rate_views_widget_compact_disabled($value, $field, $columns) {
 function _rate_get_token($value) {
   global $user;
   if ($user->uid) {
-    return drupal_get_token($value);
+    return backdrop_get_token($value);
   }
   else {
-    return md5($value . drupal_get_private_key());
+    return md5($value . backdrop_get_private_key());
   }
 }
 
@@ -1145,32 +1178,72 @@ function rate_theme() {
     'rate_template_thumbs_up' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'rate-template-thumbs-up',
-      'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up',
+      'path' => backdrop_get_path('module', 'rate') . '/templates/thumbs-up',
     ),
     'rate_template_thumbs_up_down' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => array(
+        'links' => NULL,
+        'results' => NULL,
+        'mode' => NULL,
+        'just_voted' => FALSE,
+        'content_type' => NULL,
+        'content_id' => NULL,
+        'display_options' => NULL,
+      ),
       'template' => 'rate-template-thumbs-up-down',
-      'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up-down',
+      'path' => backdrop_get_path('module', 'rate') . '/templates/thumbs-up-down',
     ),
     'rate_template_number_up_down' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => array(
+        'links' => NULL,
+        'results' => NULL,
+        'mode' => NULL,
+        'just_voted' => FALSE,
+        'content_type' => NULL,
+        'content_id' => NULL,
+        'display_options' => NULL,
+      ),
       'template' => 'rate-template-number-up-down',
-      'path' => drupal_get_path('module', 'rate') . '/templates/number-up-down',
+      'path' => backdrop_get_path('module', 'rate') . '/templates/number-up-down',
     ),
     'rate_template_fivestar' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => array(
+        'links' => NULL,
+        'results' => NULL,
+        'mode' => NULL,
+        'just_voted' => FALSE,
+        'content_type' => NULL,
+        'content_id' => NULL,
+        'display_options' => NULL,
+      ),
       'template' => 'rate-template-fivestar',
-      'path' => drupal_get_path('module', 'rate') . '/templates/fivestar',
+      'path' => backdrop_get_path('module', 'rate') . '/templates/fivestar',
     ),
     'rate_template_emotion' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => array(
+        'links' => NULL,
+        'results' => NULL,
+        'mode' => NULL,
+        'just_voted' => FALSE,
+        'content_type' => NULL,
+        'content_id' => NULL,
+        'display_options' => NULL,
+      ),
       'template' => 'rate-template-emotion',
-      'path' => drupal_get_path('module', 'rate') . '/templates/emotion',
+      'path' => backdrop_get_path('module', 'rate') . '/templates/emotion',
     ),
     'rate_template_yesno' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => array(
+        'links' => NULL,
+        'results' => NULL,
+        'mode' => NULL,
+        'just_voted' => FALSE,
+        'content_type' => NULL,
+        'content_id' => NULL,
+        'display_options' => NULL,
+      ),
       'template' => 'rate-template-yesno',
-      'path' => drupal_get_path('module', 'rate') . '/templates/yesno',
+      'path' => backdrop_get_path('module', 'rate') . '/templates/yesno',
     ),
   );
 }
@@ -1180,7 +1253,7 @@ function rate_theme() {
  */
 function rate_preprocess_rate_widget(&$variables) {
   extract($variables);
-  
+
   $buttons = array();
   foreach ($links as $link) {
     $classes = 'rate-btn';
@@ -1250,7 +1323,7 @@ function rate_preprocess_rate_template_fivestar(&$variables) {
     $stars[] = theme('rate_button', array('text' => $links[$i]['text'], 'href' => $links[$i]['href'], 'class' => $class));
   }
   $variables['stars'] = $stars;
-  
+
   $info = array();
   if ($mode == RATE_CLOSED) {
     $info[] = t('Voting is closed.');
@@ -1433,7 +1506,9 @@ function theme_rate_button($variables) {
  * @return bool
  */
 function rate_machine_name_exists($machine_name) {
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   $active = array();
   foreach ($widgets as $widget_id => $widget) {
     if ($widget->name == $machine_name) {
@@ -1443,11 +1518,19 @@ function rate_machine_name_exists($machine_name) {
   return FALSE;
 }
 
+function _rate_config_array_to_object($config) {
+  $new_config = array();
+  foreach ($config as $key => $value) {
+    $new_config[$key] = json_decode(json_encode($value), FALSE);
+  }
+  return $new_config;
+}
+
 /**
  * Generate a rate token
  *
- * This function is very similar to drupal_get_token(). The reason not to use
- * drupal_get_token() is that that function uses session_id(), which generates
+ * This function is very similar to backdrop_get_token(). The reason not to use
+ * backdrop_get_token() is that that function uses session_id(), which generates
  * different session id's for each page request when not logged in.
  *
  * @param string $values
@@ -1455,18 +1538,18 @@ function rate_machine_name_exists($machine_name) {
  */
 function rate_get_token($value = '') {
   global $user;
-  return drupal_hmac_base64($value, $user->uid . drupal_get_private_key() . drupal_get_hash_salt());
+  return backdrop_hmac_base64($value, $user->uid . backdrop_get_private_key() . backdrop_get_hash_salt());
 }
 
 /**
  * Page callback to generate a user login page with message.
- * 
+ *
  * @return string
  */
 function rate_login_page() {
-  drupal_set_message(t('You must login before you can vote.'));
+  backdrop_set_message(t('You must login before you can vote.'));
 
-  drupal_set_title(t('Log in'));
+  backdrop_set_title(t('Log in'));
 
   module_load_include('inc', 'user', 'user.pages');
   return user_page();
@@ -1476,11 +1559,13 @@ function rate_login_page() {
  * Implements hook_votingapi_metadata_alter().
  *
  * Make tags and option value type visible to VotingAPI.
- * 
+ *
  * @see votingapi_metadata()
  */
 function rate_votingapi_metadata_alter(&$data) {
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   foreach ($widgets as $widget) {
     if (isset($data['tags'][$widget->tag])) {
       continue;

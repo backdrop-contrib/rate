@@ -20,7 +20,7 @@ function hook_rate_templates() {
     array(-1, 'down'),
   );
   $templates['thumbs_up_down']->theme = 'rate_template_thumbs_up_down';
-  $templates['thumbs_up_down']->css = drupal_get_path('module', 'rate') . '/templates/thumbs-up-down/thumbs-up-down.css';
+  $templates['thumbs_up_down']->css = backdrop_get_path('module', 'rate') . '/templates/thumbs-up-down/thumbs-up-down.css';
   $templates['thumbs_up_down']->customizable = FALSE;
   $templates['thumbs_up_down']->translate = TRUE;
   $templates['thumbs_up_down']->template_title = t('Thumbs up / down');
@@ -35,8 +35,8 @@ function hook_rate_templates() {
     array(100, '5'),
   );
   $templates['fivestar']->theme = 'rate_template_fivestar';
-  $templates['fivestar']->css = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.css';
-  $templates['fivestar']->js = drupal_get_path('module', 'rate') . '/templates/fivestar/fivestar.js';
+  $templates['fivestar']->css = backdrop_get_path('module', 'rate') . '/templates/fivestar/fivestar.css';
+  $templates['fivestar']->js = backdrop_get_path('module', 'rate') . '/templates/fivestar/fivestar.js';
   $templates['fivestar']->customizable = FALSE;
   $templates['fivestar']->translate = FALSE;
   $templates['fivestar']->template_title = t('Fivestar');
@@ -55,7 +55,7 @@ function hook_rate_templates() {
  *   );
  */
 function hook_rate_widget_alter(&$widget, $context) {
-  
+
 }
 
 /**
@@ -75,7 +75,7 @@ function hook_rate_widget_insert(&$widget, $values) {
  * @param array $values Values from $form_state['values']
  */
 function hook_rate_widget_update(&$widget, $values) {
-  
+
 }
 
 /**
@@ -84,12 +84,12 @@ function hook_rate_widget_update(&$widget, $values) {
  * @param object $widget Widget object
  */
 function hook_rate_widget_delete(&$widget) {
-  
+
 }
 
 /**
  * Alter the vote before it is saved.
- * 
+ *
  * @param array $vote
  *   array(
  *     'entity_type' => $content_type,

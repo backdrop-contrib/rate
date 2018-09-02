@@ -12,7 +12,8 @@ function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
   }
 
   if (!empty($form['#widget_id'])) {
-    $widgets = variable_get(RATE_VAR_WIDGETS, array());
+    // TODO This variable was probably removed in Backdrop without replacement.
+    $widgets = config_get('rate_expiration.settings', RATE_VAR_WIDGETS, array());
     $widget = $widgets[$form['#widget_id']];
   }
   else {
@@ -25,8 +26,8 @@ function rate_expiration_form_rate_widget_form_alter(&$form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  
-  $options = array(-1 => t('Never')) + drupal_map_assoc(array(300, 900, 1800, 3600, 10800, 21600, 32400, 43200, 86400, 172800, 345600, 604800, 1209600, 1814400, 2419200), 'format_interval');
+
+  $options = array(-1 => t('Never')) + backdrop_map_assoc(array(300, 900, 1800, 3600, 10800, 21600, 32400, 43200, 86400, 172800, 345600, 604800, 1209600, 1814400, 2419200), 'format_interval');
   $form['expiration']['expiration'] = array(
     '#type' => 'select',
     '#title' => t('Disable voting after this period'),
@@ -86,7 +87,8 @@ function rate_expiration_rate_widget_alter($widget, $context) {
     }
     isset($widget->expiration) or $widget->expiration = 0;
     if ($widget->expiration > 0) {
-      !empty($end) or $end = $node->created + $widget->expiration;
+      empty($end);
+      $end = $node->created + $widget->expiration;
     }
     if (($end > 0 && $end <= REQUEST_TIME) || ($start > 0 && $start > REQUEST_TIME)) {
       $widget->mode = RATE_CLOSED;
@@ -189,7 +191,8 @@ function _rate_expiration_filter_widgets($item) {
 function rate_expiration_node_insert($node) {
   global $user;
 
-  $timezone = is_null($user->timezone) ? variable_get('date_default_timezone', 0) : $user->timezone;
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $timezone = is_null($user->timezone) ? config_get('rate_expiration.settings', 'date_default_timezone', 0) : $user->timezone;
   if (!is_numeric($timezone)) {
     // Convert textual timezone to numeric offset.
     $timezone = new DateTimeZone($timezone);
@@ -200,7 +203,8 @@ function rate_expiration_node_insert($node) {
   $widgets = rate_get_active_widgets('node', $node->type);
   $widgets = array_filter($widgets, '_rate_expiration_filter_widgets');
   foreach ($widgets as $widget) {
-    $timezone = is_null($user->timezone) ? variable_get('date_default_timezone', 0) : $user->timezone;
+    // TODO This variable was probably removed in Backdrop without replacement.
+    $timezone = is_null($user->timezone) ? config_get('rate_expiration.settings', 'date_default_timezone', 0) : $user->timezone;
     $container = 'rate_expiration_' . $widget->name;
     $begin = "{$container}_begin";
     $end = "{$container}_end";
@@ -225,7 +229,8 @@ function rate_expiration_node_insert($node) {
 function rate_expiration_node_update($node) {
   global $user;
 
-  $timezone = is_null($user->timezone) ? variable_get('date_default_timezone', 0) : $user->timezone;
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $timezone = is_null($user->timezone) ? config_get('rate_expiration.settings', 'date_default_timezone', 0) : $user->timezone;
   if (!is_numeric($timezone)) {
     // Convert textual timezone to numeric offset.
     $timezone = new DateTimeZone($timezone);

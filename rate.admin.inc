@@ -11,7 +11,9 @@
  * Generates the admin page which contains the widget listing.
  */
 function rate_admin_page() {
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   uasort($widgets, '_rate_sort');
 
   $header = array(t('Title'), t('Name'), t('Operations'));
@@ -28,8 +30,8 @@ function rate_admin_page() {
 
   $output = '';
   $output .= '<h3>' . t('Add widget') . '</h3>';
-  $add_form = drupal_get_form('rate_choose_template_form');
-  $output .= drupal_render($add_form);
+  $add_form = backdrop_get_form('rate_choose_template_form');
+  $output .= backdrop_render($add_form);
   if ($rows) {
     $output .= theme('table', array('header' => $header, 'rows' => $rows));
   }
@@ -60,7 +62,9 @@ function _rate_sort($a, $b) {
 function rate_choose_template_form($form, &$form_state, $id = NULL) {
   if ($id) {
     $form['#widget_id'] = $id;
-    $widgets = variable_get(RATE_VAR_WIDGETS, array());
+    // TODO This variable was probably removed in Backdrop without replacement.
+    $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+    $widgets = _rate_config_array_to_object($widgets);
     $widget = $widgets[$id];
     isset($widget->template) or $widget->template = 'custom';
     $selected = $widget->template;
@@ -105,7 +109,7 @@ function rate_choose_template_form_submit($form, &$form_state) {
   else {
     $path = RATE_PATH_ADMIN_PAGE_ADD;
   }
-  drupal_goto($path, array('query' => $query));
+  backdrop_goto($path, array('query' => $query));
 }
 
 /**
@@ -122,9 +126,11 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
   }
 
   if ($id) {
-    $widgets = variable_get(RATE_VAR_WIDGETS, array());
+    // TODO This variable was probably removed in Backdrop without replacement.
+    $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+    $widgets = _rate_config_array_to_object($widgets);
     if (!isset($widgets[$id])) {
-      drupal_not_found();
+      backdrop_not_found();
       module_invoke_all('exit') && exit;
     }
     $widget = $widgets[$id];
@@ -155,7 +161,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     $widget->delete_vote_on_second_click = 0;
     $widget->use_source_translation = TRUE;
   }
-  
+
   // Determine the template from GET (which is only available before the form
   // was post) or from post values (only available after the form was posted).
   if (isset($form_state['post']['widget_template'])) {
@@ -182,7 +188,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
       $widget->value_type = $template->value_type;
     }
   }
-  
+
   if ($id) {
     $form['#widget_id'] = $id;
   }
@@ -193,7 +199,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#type' => 'hidden',
     '#default_value' => $widget->template,
   );
-  
+
   if ($id) {
     $link = l(t('change the widget type'), str_replace('%', $id, RATE_PATH_ADMIN_PAGE_TEMPLATE));
     if ($widget->template == 'custom') {
@@ -238,7 +244,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#description' => t('Tag used for VotingAPI. Widgets with the same tag share their voting results.'),
     '#required' => TRUE,
   );
-  
+
   if ($widget->customizable) {
     $options = array(
       'percent' => t('Percentage'),
@@ -435,7 +441,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#collapsed' => TRUE,
     '#description' => t('Note that these settings do not apply for rate widgets inside views. Widgets in views will display the average voting when a relationship to the voting results is used and the users vote in case of a relationship to the votes.'),
   );
-  
+
   $options = array(
     RATE_AVERAGE => t('Average rating'),
     RATE_USER => t('Users vote if available, empty otherwise'),
@@ -477,7 +483,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $res = db_select('role', 'r')
+/*  $res = db_select('role', 'r')
     ->fields('r', array('rid', 'name'))
     ->orderBy('name', 'asc')
     ->execute();
@@ -485,10 +491,12 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
   foreach ($res as $rec) {
     $options[$rec->rid] = $rec->name;
   }
+*/
+  $roles = user_roles();
   $form['permissions']['roles'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Roles'),
-    '#options' => $options,
+    '#options' => $roles,
     '#default_value' => $widget->roles,
     '#description' => t('Allow voting only for the selected role(s). If you select no roles, all users are allowed to vote.'),
   );
@@ -511,7 +519,7 @@ function rate_widget_form($form, &$form_state, $id = NULL) {
     '#default_value' => $widget->noperm_behaviour,
     '#description' => t('Choose an action what will happen if a user clicks on the widget but doesn\'t have the permission to vote.'),
   );
-  
+
   if (module_exists('translation')) {
     $form['translations'] = array(
       '#type' => 'fieldset',
@@ -549,7 +557,7 @@ function rate_widget_form_validate($form, &$form_state) {
   if (!preg_match('/^[a-z\\_0-9]+$/i', $form_state['values']['tag'])) {
     form_set_error('tag', t('The vote tag may only contain alphanumeric characters and underscores.'));
   }
-  
+
   $customizable = TRUE;
   if ($form_state['values']['widget_template'] != 'custom') {
     if ($template = _rate_get_template($form_state['values']['widget_template'])) {
@@ -623,7 +631,7 @@ function rate_widget_form_submit($form, &$form_state) {
   else {
     $widget->use_source_translation = TRUE;
   }
-  
+
   if ($widget->template != 'custom') {
     // Take over the values from the template.
     $template = _rate_get_template($widget->template);
@@ -643,6 +651,7 @@ function rate_widget_form_submit($form, &$form_state) {
     $widget->value_type = $form_state['values']['value_type'];
     $widget->translate = (bool) $form_state['values']['translate'];
   }
+
 
   foreach ($form_state['values'] as $name => $value) {
     if (preg_match('/^value([0-9]+)$/', $name, $match) && preg_match('/^\\-?[0-9]+$/', $value)) {
@@ -666,9 +675,10 @@ function rate_widget_form_submit($form, &$form_state) {
   // Let other modules alter the rate widget.
   $hook = 'rate_widget_' . (empty($form['#widget_id']) ? 'insert' : 'update');
   module_invoke_all($hook, $widget, $form_state['values']);
-
   // Save the widget.
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   if (!empty($form['#widget_id'])) {
     $id = (int) $form['#widget_id'];
   }
@@ -679,8 +689,9 @@ function rate_widget_form_submit($form, &$form_state) {
     }
   }
   $widgets[$id] = $widget;
-  variable_set(RATE_VAR_WIDGETS, $widgets);
-  drupal_set_message(t('The widget has been saved.'));
+  // TODO This variable was probably removed in Backdrop without replacement.
+  config_set('rate.settings', RATE_VAR_WIDGETS, $widgets);
+  backdrop_set_message(t('The widget has been saved.'));
 
   $form_state['redirect'] = RATE_PATH_ADMIN_PAGE;
 }
@@ -712,8 +723,8 @@ function theme_rate_admin_types($variables) {
       unset($subelement['comment_type_' . $name]['#title']);
       $rows[] = array(
         check_plain($subelement['#title']),
-        drupal_render($subelement['node_type_' . $name]),
-        drupal_render($subelement['comment_type_' . $name]),
+        backdrop_render($subelement['node_type_' . $name]),
+        backdrop_render($subelement['comment_type_' . $name]),
       );
     }
   }
@@ -741,9 +752,9 @@ function theme_rate_admin_options($variables) {
       unset($subelement['label' . $id]['#title']);
       unset($subelement['delete' . $id]['#title']);
       $rows[] = array(
-        drupal_render($subelement['value' . $id]),
-        drupal_render($subelement['label' . $id]),
-        drupal_render($subelement['delete' . $id]),
+        backdrop_render($subelement['value' . $id]),
+        backdrop_render($subelement['label' . $id]),
+        backdrop_render($subelement['delete' . $id]),
       );
     }
   }
@@ -756,19 +767,21 @@ function theme_rate_admin_options($variables) {
 function rate_widget_delete_form($form, &$form_state, $id) {
   $form = array();
 
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
 
   $form['#widget_id'] = $id;
 
   if (!isset($widgets[$id])) {
-    drupal_not_found();
+    backdrop_not_found();
     module_invoke_all('exit') && exit;
   }
 
   $title = $widgets[$id]->title;
 
   $form['info'] = array(
-    '#markup' => '<p>' . t('Are you sure you want to delete widget %title?', array('%title' => $title)) . '</p>'
+    '#markup' => '<p>' . t('Are you sure you want to delete widget %title?', array('%title' => $title)) . '</p>',
   );
 
   $form['buttons']['submit'] = array(
@@ -787,14 +800,17 @@ function rate_widget_delete_form($form, &$form_state, $id) {
  * Submit handler.
  */
 function rate_widget_delete_form_submit($form, &$form_state) {
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   if (isset($widgets[$form['#widget_id']])) {
     $widget = $widgets[$form['#widget_id']];
 
     unset($widgets[$form['#widget_id']]);
-    variable_set(RATE_VAR_WIDGETS, $widgets);
+    // TODO This variable was probably removed in Backdrop without replacement.
+    config_set('rate.settings', RATE_VAR_WIDGETS, $widgets);
 
-    drupal_set_message(t('Widget %title has been deleted.', array('%title' => $widget->title)));
+    backdrop_set_message(t('Widget %title has been deleted.', array('%title' => $widget->title)));
 
     // Let other modules act on this action.
     module_invoke_all('rate_widget_delete', $widget);
@@ -806,7 +822,8 @@ function rate_widget_delete_form_submit($form, &$form_state) {
  * Admin settings form.
  */
 function rate_settings_form($form, &$form_state) {
-  
+
+  $form['#config'] = 'rate.settings';
   $form['bot'] = array(
     '#type' => 'fieldset',
     '#title' => t('Bot detection'),
@@ -814,40 +831,43 @@ function rate_settings_form($form, &$form_state) {
     '#collapsbile' => FALSE,
     '#collapsed' => FALSE,
   );
-  
-  $options = drupal_map_assoc(array(0, 10, 25, 50, 100, 250, 500, 1000));
+
+  $options = backdrop_map_assoc(array(0, 10, 25, 50, 100, 250, 500, 1000));
   $options[0] = t('disable');
-  
+
+  // TODO This variable was probably removed in Backdrop without replacement.
   $form['bot'][RATE_VAR_BOT_MINUTE_THRESHOLD] = array(
     '#type' => 'select',
     '#title' => t('1 minute threshold'),
     '#options' => $options,
-    '#default_value' => variable_get(RATE_VAR_BOT_MINUTE_THRESHOLD, 25),
+    '#default_value' => config_get('rate.settings', RATE_VAR_BOT_MINUTE_THRESHOLD, 25),
   );
-  
+
+  // TODO This variable was probably removed in Backdrop without replacement.
   $form['bot'][RATE_VAR_BOT_HOUR_THRESHOLD] = array(
     '#type' => 'select',
     '#title' => t('1 hour threshold'),
     '#options' => $options,
-    '#default_value' => variable_get(RATE_VAR_BOT_HOUR_THRESHOLD, 250),
+    '#default_value' => config_get('rate.settings', RATE_VAR_BOT_HOUR_THRESHOLD, 250),
   );
-  
+
   /* Feature planned for 1.5 release
-  $form['bot'][RATE_VAR_BOT_RETROACTIVE] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Retroactive delete votes'),
-    '#default_value' => variable_get(RATE_VAR_BOT_RETROACTIVE, TRUE),
-    '#description' => t('The bot detection is a retrospective process. When enabled all votes done from the bots IP will be deleted when the bot hits the threshold.'),
-  );
-  */
-  
+   $form['bot'][RATE_VAR_BOT_RETROACTIVE] = array(
+   '#type' => 'checkbox',
+   '#title' => t('Retroactive delete votes'),
+   '#default_value' => config_get('rate.settings', RATE_VAR_BOT_RETROACTIVE, TRUE),
+   '#description' => t('The bot detection is a retrospective process. When enabled all votes done from the bots IP will be deleted when the bot hits the threshold.'),
+   );
+   */
+
+  // TODO This variable was probably removed in Backdrop without replacement.
   $form['bot'][RATE_VAR_BOT_BOTSCOUT_KEY] = array(
     '#type' => 'textfield',
     '#title' => t('BotScout.com API key'),
-    '#default_value' => variable_get(RATE_VAR_BOT_BOTSCOUT_KEY, ''),
+    '#default_value' => config_get('rate.settings', RATE_VAR_BOT_BOTSCOUT_KEY, ''),
     '#description' => t('Rate will check the voters IP against the BotScout database if it has an API key. You can request a key at %url.', array('%url' => 'http://botscout.com/getkey.htm')),
   );
-  
+
   return system_settings_form($form);
 }
 
@@ -857,10 +877,10 @@ function rate_settings_form($form, &$form_state) {
 function rate_settings_form_validate($form, &$form_state) {
   if (!empty($form_state['values'][RATE_VAR_BOT_BOTSCOUT_KEY])) {
     $url = "http://botscout.com/test/?ip=84.16.230.111&key=" . $form_state['values'][RATE_VAR_BOT_BOTSCOUT_KEY];
-    $data = drupal_http_request($url, array('timeout' => 5));
+    $data = backdrop_http_request($url, array('timeout' => 5));
     if ($data->code == 200) {
       if ($data->data{0} == 'Y' || $data->data{0} == 'N') {
-        drupal_set_message(t('Rate has succesfully contacted the BotScout server.'));
+        backdrop_set_message(t('Rate has succesfully contacted the BotScout server.'));
       }
       else {
         form_set_error(RATE_VAR_BOT_BOTSCOUT_KEY, t('Invalid API-key.'));

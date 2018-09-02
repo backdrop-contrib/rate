@@ -1,5 +1,7 @@
 name = Rate Slider
 description = Add a slider widget type
-core = 7.x
+backdrop = 1.x
+type = module
 package = Voting
 dependencies[] = rate
+

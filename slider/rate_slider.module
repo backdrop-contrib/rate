@@ -21,8 +21,8 @@ function rate_slider_rate_templates() {
     array(100, '10'),
   );
   $templates['slider']->theme = 'rate_template_slider';
-  $templates['slider']->css = drupal_get_path('module', 'rate_slider') . '/templates/slider/slider.css';
-  $templates['slider']->js = drupal_get_path('module', 'rate_slider') . '/templates/slider/slider.js';
+  $templates['slider']->css = backdrop_get_path('module', 'rate_slider') . '/templates/slider/slider.css';
+  $templates['slider']->js = backdrop_get_path('module', 'rate_slider') . '/templates/slider/slider.js';
   $templates['slider']->customizable = FALSE;
   $templates['slider']->translate = FALSE;
   $templates['slider']->template_title = t('Slider');
@@ -38,7 +38,7 @@ function rate_slider_theme() {
     'rate_template_slider' => array(
       'arguments' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
       'template' => 'slider',
-      'path' => drupal_get_path('module', 'rate_slider') . '/templates/slider',
+      'path' => backdrop_get_path('module', 'rate_slider') . '/templates/slider',
     ),
   );
 }
@@ -49,7 +49,7 @@ function rate_slider_theme() {
 function rate_slider_preprocess_rate_template_slider(&$variables) {
   extract($variables);
 
-  drupal_add_library('system', 'ui.slider');
+  backdrop_add_library('system', 'ui.slider');
 
   // Calculate start value for slider.
   if ($variables['results']['count'] == 0) {

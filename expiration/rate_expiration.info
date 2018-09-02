@@ -1,8 +1,7 @@
 name = Rate Expiration
 description = Add an expiration time to rate widgets
-core = 7.x
+backdrop = 1.x
+type = module
 package = Voting
 dependencies[] = rate
 dependencies[] = date
-files[] = rate_expiration.install
-files[] = rate_expiration.module

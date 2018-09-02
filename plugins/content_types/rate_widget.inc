@@ -14,6 +14,10 @@ $plugin = array(
 );
 
 // Plugins form
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function rate_panels_rate_widget_form($form, &$form_state) {
   $conf = $form_state['conf'];
   // General options, that depends on the type of options your widget or plugin must have as a configuration
@@ -30,7 +34,9 @@ function rate_panels_rate_widget_form($form, &$form_state) {
     '#default_value' => $conf['build_mode'],
   );
 
-  $widgets = variable_get(RATE_VAR_WIDGETS, array());
+  // TODO This variable was probably removed in Backdrop without replacement.
+  $widgets = config_get('rate.settings', RATE_VAR_WIDGETS, array());
+  $widgets = _rate_config_array_to_object($widgets);
   $widget_options = array();
   foreach ($widgets as $id => $widget) {
     $widget_options[$id] = $widget->title;
@@ -56,6 +62,10 @@ function rate_panels_rate_widget_form_submit($form, &$form_state) {
   }
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function rate_panels_rate_widget_render($subtype, $conf, $panel_args, $context) {
   if (empty($context) || empty($context->data)) {
     return;

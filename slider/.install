@@ -1,0 +1,28 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the rate_slider module.
+ *
+ */
+
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function rate_slider_update_last_removed() {
+  return;
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function rate_slider_update_1000() {
+  $config = config('rate_slider.settings');
+}
+
+/**
+ * Implements hook_install().
+ */
+function rate_slider_install() {
+  // Dynamically generated variable data was detected.
+}

@@ -60,7 +60,7 @@ function rate_results_page($node) {
           ->condition('vv.timestamp', 0, '>');
         $field = $query->addExpression('COUNT(*)', 'vote_count');
         $total_count = $query->execute()->fetchField();
-        
+
         $title = $widget->translate ? t($option[1]) : $option[1];
         $rows[] = array($title, $total_count);
       }
@@ -98,7 +98,7 @@ function rate_results_page($node) {
         ':nid' => $node->nid,
         ':valuetype' => $widget->value_type,
         ':tag' => $widget->tag,
-        ':mintimestamp' => $min_timestamp
+        ':mintimestamp' => $min_timestamp,
       );
       $res = db_query($sql, $args);
       $results = array();
@@ -133,8 +133,16 @@ function rate_results_page($node) {
         // Define colors for the bars. The first color is green, second is red. This is for
         // thumbs up / down voting (the first is up, which needs to be green).
         $colors = array(
-          '01df01', 'ff0000', '0101df', 'ffbc00', '01dfd6',
-          'b404ae', '8a4b08', '38610b', '610b38', '610b5e',
+          '01df01',
+          'ff0000',
+          '0101df',
+          'ffbc00',
+          '01dfd6',
+          'b404ae',
+          '8a4b08',
+          '38610b',
+          '610b38',
+          '610b5e',
         );
         $x = 0;
         $chart['#bar_size'] = chart_bar_size(ceil(20 / count($chart['#data'])), 0);
