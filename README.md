@@ -30,6 +30,7 @@ Current Maintainers
 -------------------
 
 - Robert Garrigós (https://github.com/robertgarrigos).
+- Jen Lampton (https://github.com/jenlampton).
 
 Credits
 -------
