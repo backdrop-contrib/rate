@@ -430,7 +430,7 @@ function _rate_check_permissions($widget, $node = NULL) {
   foreach ($widget->roles as $rid => $role) {
     if ($role) {
       $roles_selected = TRUE;
-      if (isset($user->roles[$rid])) {
+      if (in_array($role, $user->roles)) {
         return RATE_PERMISSION_OK;
       }
     }
